@@ -72,6 +72,79 @@ struct ReprojectionError {
     Point2D point_2d_;
 };
 
+double norm2(const Point3D& point) {
+    return point[0] * point[0] + point[1] * point[1] + point[2] * point[2];
+}
+
+Point3D crossProduct(const Point3D& p1, const Point3D& p2) {
+    return {
+        p1[1] * p2[2] - p1[2] * p2[1],
+        p1[2] * p2[0] - p1[0] * p2[2],
+        p1[0] * p2[1] - p1[1] * p2[0]
+    };
+}
+
+std::vector<size_t> selectFixedDims(const Point3D& p1, const Point3D& p2) {
+    const auto cp = crossProduct(p1, p2);
+    const auto iter = std::max_element(cp.begin(), cp.end(), [](const auto& lhs, const auto& rhs) {
+        return std::abs(lhs) < std::abs(rhs);
+    });
+    const size_t i_max = std::distance(cp.begin(), iter);
+
+    return i_max == 0 ? std::vector<size_t>{1, 2} : i_max == 1 ? std::vector<size_t>{0, 2} : std::vector<size_t>{0, 1};
+}
+
+std::map<size_t, std::vector<size_t>> selectBase(std::vector<Point3D> target_points) {
+    if (target_points.size() < 3) {
+        throw std::runtime_error("Not enough points to select from");
+    }
+
+    // first selected point is the target's center of origin - it makes sense to select the point with the smallest distance from (0, 0, 0)
+    const auto base_iter = std::min_element(target_points.begin(), target_points.end(), [](const auto& lhs, const auto& rhs) {
+        return norm2(lhs) < norm2(rhs);
+    });
+
+    const size_t i_base = std::distance(target_points.begin(), base_iter);
+    auto p0 = target_points[i_base];
+    std::transform(target_points.begin(), target_points.end(), target_points.begin(), [&p0](const auto& p) {
+        return Point3D{p[0] - p0[0], p[1] - p0[1], p[2] - p0[2]};
+    });
+
+    // now selecting two points to form the base of the coordinate system
+    // doing it by selecting the least collinear points except from the base point
+    // "least collinear" means the points that have the biggest cross product
+    std::map<std::pair<size_t, size_t>, double> cross_products;
+    for (size_t i = 0; i < target_points.size(); ++i) {
+        for (size_t j = i + 1; j < target_points.size(); ++j) {
+            if (i == i_base || j == i_base) {
+                continue;
+            }
+
+            const auto& p1 = target_points[i];
+            const auto& p2 = target_points[j];
+            cross_products[{i, j}] = norm2(crossProduct(p1, p2));
+        }
+    }
+
+    const auto max_iter = std::max_element(cross_products.begin(), cross_products.end(), [](const auto& lhs, const auto& rhs) {
+        return lhs.second < rhs.second;
+    });
+
+    if (max_iter->second < std::numeric_limits<double>::epsilon()) {
+        throw std::runtime_error("All points in the target are collinear");
+    }
+
+    const auto& p1 = target_points[max_iter->first.first];
+    const auto& p2 = target_points[max_iter->first.second];
+    const auto fixed_dims = selectFixedDims(p1, p2);
+
+    return {
+        { i_base, {0, 1, 2}},
+        { max_iter->first.first, fixed_dims },
+        { max_iter->first.second, fixed_dims }
+    };
+}
+
 void calibrate(
     std::vector<Point3D>& target_points,
     const std::vector<std::vector<Point2D>>& image_points,
