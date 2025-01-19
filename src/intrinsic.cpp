@@ -84,17 +84,17 @@ Point3D crossProduct(const Point3D& p1, const Point3D& p2) {
     };
 }
 
-std::vector<size_t> selectFixedDims(const Point3D& p1, const Point3D& p2) {
+std::vector<int> selectFixedDims(const Point3D& p1, const Point3D& p2) {
     const auto cp = crossProduct(p1, p2);
     const auto iter = std::max_element(cp.begin(), cp.end(), [](const auto& lhs, const auto& rhs) {
         return std::abs(lhs) < std::abs(rhs);
     });
     const size_t i_max = std::distance(cp.begin(), iter);
 
-    return i_max == 0 ? std::vector<size_t>{1, 2} : i_max == 1 ? std::vector<size_t>{0, 2} : std::vector<size_t>{0, 1};
+    return i_max == 0 ? std::vector<int>{1, 2} : i_max == 1 ? std::vector<int>{0, 2} : std::vector<int>{0, 1};
 }
 
-std::map<size_t, std::vector<size_t>> selectBase(std::vector<Point3D> target_points) {
+std::map<size_t, std::vector<int>> selectBase(std::vector<Point3D> target_points) {
     if (target_points.size() < 3) {
         throw std::runtime_error("Not enough points to select from");
     }
@@ -152,10 +152,15 @@ void calibrate(
     DistortionCoefficients& distortion_coefficients,
     std::vector<QuatSE3> obj_2_cams
 ) {
-    // define the manifold for the R^3 space
-    auto r3 = ceres::EuclideanManifold<3>{};
     // define the manifold for the SE3 transformation
     auto se3 = ceres::ProductManifold{ceres::QuaternionManifold{}, ceres::EuclideanManifold<3>{}};
+
+    // manifolds (constraints) for the base points
+    const auto base_points = selectBase(target_points);
+    std::map<size_t, ceres::SubsetManifold> base_manifolds;
+    for (const auto& [i, dims] : base_points) {
+        base_manifolds.emplace(i, ceres::SubsetManifold{n_r3, dims});
+    }
 
     ceres::Problem::Options problem_options;
     problem_options.cost_function_ownership = ceres::TAKE_OWNERSHIP;
@@ -168,11 +173,17 @@ void calibrate(
     for (auto& obj_2_cam : obj_2_cams) {
         problem.AddParameterBlock(obj_2_cam.data(), obj_2_cam.size(), &se3);
     }
-    for (auto& target_point : target_points) {
-        problem.AddParameterBlock(target_point.data(), target_point.size(), &r3);
+
+    for (size_t i = 0; i < target_points.size(); ++i) {
+        auto& target_point = target_points[i];
+        if (base_points.contains(i)) {
+            problem.AddParameterBlock(target_point.data(), target_point.size(), &base_manifolds.at(i));
+        } else {
+            problem.AddParameterBlock(target_point.data(), target_point.size());
+        }
     }
 
-    //   Add residual blocks
+    // Add residual blocks
     for (size_t i_im = 0; i_im < image_points.size(); ++i_im) {
         const auto& points_per_im = image_points[i_im];
         for (size_t j = 0; j < points_per_im.size(); ++j) {
