@@ -147,7 +147,7 @@ std::map<size_t, std::vector<int>> selectBase(std::vector<Point3D> target_points
 
 void calibrate(
     std::vector<Point3D>& target_points,
-    const std::vector<std::vector<Point2D>>& image_points,
+    const std::vector<std::map<size_t, Point2D>>& image_points,
     CameraMatrix& camera_matrix,
     DistortionCoefficients& distortion_coefficients,
     std::vector<QuatSE3> obj_2_cams
@@ -186,9 +186,8 @@ void calibrate(
     // Add residual blocks
     for (size_t i_im = 0; i_im < image_points.size(); ++i_im) {
         const auto& points_per_im = image_points[i_im];
-        for (size_t j = 0; j < points_per_im.size(); ++j) {
-            auto& point_2d = points_per_im[j];
-            auto& point_3d = target_points[j];
+        for (const auto& [tp_index, point_2d] : points_per_im) {
+            auto& point_3d = target_points[tp_index];
             auto cost_function                = ReprojectionError::Create(point_2d);
             problem.AddResidualBlock(cost_function.release(),
                                      nullptr,  // loss function (nullptr = default)

@@ -1,4 +1,5 @@
 #include <array>
+#include <map>
 #include <vector>
 
 namespace caliban {
@@ -17,7 +18,7 @@ namespace caliban {
     using QuatSE3 = std::array<double, n_quat_se3>;
     void calibrate(
         std::vector<Point3D>& target_points,
-        const std::vector<std::vector<Point2D>>& image_points,
+        const std::vector<std::map<size_t, Point2D>>& image_points,
         CameraMatrix& camera_matrix,
         DistortionCoefficients& distortion_coefficients,
         std::vector<QuatSE3> obj_2_cams
