@@ -28,3 +28,4 @@ CPMAddPackage(
 
 # add subdirectories
 add_subdirectory(src)
+add_subdirectory(app)
