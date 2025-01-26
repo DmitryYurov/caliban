@@ -6,8 +6,6 @@ import bpy
 import cv2
 import argparse
 
-from blenderproc.python.material import MaterialLoaderUtility
-
 parser = argparse.ArgumentParser()
 parser.add_argument("--num_poses", type=int, required=True)
 parser.add_argument("--pattern", type=str, default="radon_checkerboard.png")
@@ -22,31 +20,38 @@ bproc.init()
 
 z_dist_marker = -0.4
 pat_h, pat_w = args.pattern_hw
+scale_h, scale_w = pat_h / 2., pat_w / 2.
 
 chessboard_texture_path = os.path.join("./", args.pattern)
 if not os.path.exists(chessboard_texture_path):
-    raise FileNotFoundError("Chessboard image not found. Place chessboard.png in the script directory.")
+    raise FileNotFoundError("Pattern not found")
 
-marker = bproc.object.create_primitive("PLANE", scale=[pat_w / 2., pat_h / 2., 0.01])
-material = bproc.material.create("chessboard_material")
-material.blender_obj.use_nodes = True 
+marker = bproc.object.create_primitive("PLANE", scale=[scale_w, scale_h, 1])
+bpy.ops.object.mode_set(mode='EDIT')
+bpy.ops.mesh.subdivide(number_cuts=1000)
+bpy.ops.object.mode_set(mode='OBJECT')
 
-table = bproc.object.create_primitive("PLANE", scale=[4, 4, 0.01])
-mat = MaterialLoaderUtility.create(name="ambient")
-            
-principled_node = mat.get_the_one_node_with_type("BsdfPrincipled")
-color = np.array([0.4, 0.4, 0.4, 1.])  
-principled_node.inputs["Base Color"].default_value = color
+if args.curvature > 0:
+    curve_radius = args.curvature
+    plane_mesh = marker.get_mesh()
+    for vertex in plane_mesh.vertices:
+        x, y, z = vertex.co.x * scale_w, vertex.co.y * scale_h, vertex.co.z
+        d = np.sqrt(x**2 + y**2)  # distance to center
+        z = curve_radius**2 / np.sqrt(curve_radius**2 + d**2) - curve_radius
+        compress_factor = curve_radius / np.sqrt(curve_radius**2 + d**2)
+        vertex.co.z = z
+        vertex.co.x = vertex.co.x * compress_factor
+        vertex.co.y = vertex.co.y * compress_factor
 
-table.replace_materials(mat)
-table.set_location([0, 0, z_dist_marker - 1e-4])
+    plane_mesh.update()
                                       
+material = bproc.material.create("chessboard_material")
 material_nodes = material.blender_obj.node_tree.nodes
-texture_node = material_nodes.new(type='ShaderNodeTexImage')
-texture_node.image = bpy.data.images.load(chessboard_texture_path)
-bsdf_node = material_nodes.get("Principled BSDF")
-material.blender_obj.node_tree.links.new(bsdf_node.inputs["Base Color"], texture_node.outputs["Color"])
-marker.add_material(material)
+image_texture_node = material_nodes.new(type='ShaderNodeTexImage')
+image_texture_node.image = bpy.data.images.load(chessboard_texture_path)
+principled_node = material_nodes.get("Principled BSDF")
+material.blender_obj.node_tree.links.new(image_texture_node.outputs["Color"], principled_node.inputs["Base Color"])
+marker.replace_materials(material)
 
 fx, fy = 1400, 1400
 image_width, image_height = args.image_hw
@@ -105,6 +110,7 @@ os.makedirs(output_dir, exist_ok=True)
 
 np.savetxt(os.path.join(args.output_dir, "K.txt"), K)
 np.savetxt(os.path.join(args.output_dir, "dist_coeff.txt"), np.array([k1, k2, p1, p2, k3]))
+np.savetxt(os.path.join(args.output_dir, "curvature.txt"), np.array([args.curvature]))
 
 for key in ['colors']:
     use_interpolation = key == "colors"
