@@ -31,6 +31,7 @@ bpy.ops.object.mode_set(mode='EDIT')
 bpy.ops.mesh.subdivide(number_cuts=1000)
 bpy.ops.object.mode_set(mode='OBJECT')
 
+max_displacement = 0.0
 if args.curvature > 0:
     curve_radius = args.curvature
     plane_mesh = marker.get_mesh()
@@ -38,6 +39,7 @@ if args.curvature > 0:
         x, y, z = vertex.co.x * scale_w, vertex.co.y * scale_h, vertex.co.z
         d = np.sqrt(x**2 + y**2)  # distance to center
         z = curve_radius**2 / np.sqrt(curve_radius**2 + d**2) - curve_radius
+        max_displacement = max(max_displacement, np.abs(z))
         compress_factor = curve_radius / np.sqrt(curve_radius**2 + d**2)
         vertex.co.z = z
         vertex.co.x = vertex.co.x * compress_factor
@@ -110,7 +112,7 @@ os.makedirs(output_dir, exist_ok=True)
 
 np.savetxt(os.path.join(args.output_dir, "K.txt"), K)
 np.savetxt(os.path.join(args.output_dir, "dist_coeff.txt"), np.array([k1, k2, p1, p2, k3]))
-np.savetxt(os.path.join(args.output_dir, "curvature.txt"), np.array([args.curvature]))
+np.savetxt(os.path.join(args.output_dir, "curvature.txt"), np.array([args.curvature, max_displacement]))
 
 for key in ['colors']:
     use_interpolation = key == "colors"
