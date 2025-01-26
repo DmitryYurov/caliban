@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+
+<svg width="200mm" height="140mm" viewBox="0 0 200 140" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" style="stroke:black; fill:none; stroke-width:0.5pt; stroke-linejoin:round; text-anchor:middle" font-family="Helvetica, Arial, FreeSans, Sans, sans, sans-serif">
+
+<g>
+
+<path d="M9.25,15.55 A6.05,6.05 0,0,1 15.3,9.5 A6.05,6.05 0,0,1 21.35,15.55 L21.35,21.6 L15.3,21.6 A6.05,6.05 0,0,1 9.25,15.55 " fill="black" stroke="none" />
+
+<path d="M9.25,39.75 A6.05,6.05 0,0,1 15.3,33.7 L21.35,33.7 L21.35,39.75 L21.35,45.800000000000004 L15.3,45.800000000000004 A6.05,6.05 0,0,1 9.25,39.75 " fill="black" stroke="none" />
+
+<path d="M9.25,63.949999999999996 A6.05,6.05 0,0,1 15.3,57.9 L21.35,57.9 L21.35,63.949999999999996 L21.35,70.0 L15.3,70.0 A6.05,6.05 0,0,1 9.25,63.949999999999996 " fill="black" stroke="none" />
+
+<path d="M9.25,88.14999999999999 A6.05,6.05 0,0,1 15.3,82.1 L21.35,82.1 L21.35,88.14999999999999 L21.35,94.19999999999999 L15.3,94.19999999999999 A6.05,6.05 0,0,1 9.25,88.14999999999999 " fill="black" stroke="none" />
+
+<path d="M9.25,112.35 A6.05,6.05 0,0,1 15.3,106.3 L21.35,106.3 L21.35,112.35 L21.35,118.39999999999999 L15.3,118.39999999999999 A6.05,6.05 0,0,1 9.25,112.35 " fill="black" stroke="none" />
+
+<rect x="21.35" y="21.6" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="21.35" y="45.8" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="21.35" y="70.0" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="21.35" y="94.2" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<path d="M21.35,124.44999999999999 L21.35,118.39999999999999 L27.400000000000002,118.39999999999999 L33.45,118.39999999999999 L33.45,124.44999999999999 A6.05,6.05 0,0,1 27.400000000000002,130.5 A6.05,6.05 0,0,1 21.35,124.44999999999999 " fill="black" stroke="none" />
+
+<path d="M33.45,15.55 A6.05,6.05 0,0,1 39.5,9.5 A6.05,6.05 0,0,1 45.550000000000004,15.55 L45.550000000000004,21.6 L39.5,21.6 L33.45,21.6 L33.45,15.55 " fill="black" stroke="none" />
+
+<rect x="33.45" y="33.7" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="33.45" y="57.9" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="33.45" y="82.1" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="33.45" y="106.3" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="45.55" y="21.6" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="45.55" y="45.8" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="45.55" y="70.0" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="45.55" y="94.2" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<path d="M45.55,124.44999999999999 L45.55,118.39999999999999 L51.599999999999994,118.39999999999999 L57.65,118.39999999999999 L57.65,124.44999999999999 A6.05,6.05 0,0,1 51.599999999999994,130.5 A6.05,6.05 0,0,1 45.55,124.44999999999999 " fill="black" stroke="none" />
+
+<path d="M57.65,15.55 A6.05,6.05 0,0,1 63.699999999999996,9.5 A6.05,6.05 0,0,1 69.75,15.55 L69.75,21.6 L63.699999999999996,21.6 L57.65,21.6 L57.65,15.55 " fill="black" stroke="none" />
+
+<rect x="57.65" y="33.7" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="57.65" y="57.9" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="57.65" y="82.1" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="57.65" y="106.3" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="69.75" y="21.6" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="69.75" y="45.8" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="69.75" y="70.0" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="69.75" y="94.2" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<path d="M69.75,124.44999999999999 L69.75,118.39999999999999 L75.8,118.39999999999999 L81.85,118.39999999999999 L81.85,124.44999999999999 A6.05,6.05 0,0,1 75.8,130.5 A6.05,6.05 0,0,1 69.75,124.44999999999999 " fill="black" stroke="none" />
+
+<path d="M81.85,15.55 A6.05,6.05 0,0,1 87.89999999999999,9.5 A6.05,6.05 0,0,1 93.94999999999999,15.55 L93.94999999999999,21.6 L87.89999999999999,21.6 L81.85,21.6 L81.85,15.55 " fill="black" stroke="none" />
+
+<rect x="81.85" y="33.7" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="81.85" y="57.9" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="81.85" y="82.1" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="81.85" y="106.3" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="93.95" y="21.6" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="93.95" y="45.8" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="93.95" y="70.0" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="93.95" y="94.2" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<path d="M93.95,124.44999999999999 L93.95,118.39999999999999 L100.0,118.39999999999999 L106.05,118.39999999999999 L106.05,124.44999999999999 A6.05,6.05 0,0,1 100.0,130.5 A6.05,6.05 0,0,1 93.95,124.44999999999999 " fill="black" stroke="none" />
+
+<path d="M106.05,15.55 A6.05,6.05 0,0,1 112.1,9.5 A6.05,6.05 0,0,1 118.14999999999999,15.55 L118.14999999999999,21.6 L112.1,21.6 L106.05,21.6 L106.05,15.55 " fill="black" stroke="none" />
+
+<rect x="106.05" y="33.7" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="106.05" y="57.9" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="106.05" y="82.1" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="106.05" y="106.3" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="118.14999999999999" y="21.6" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="118.14999999999999" y="45.8" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="118.14999999999999" y="70.0" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="118.14999999999999" y="94.2" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<path d="M118.14999999999999,124.44999999999999 L118.14999999999999,118.39999999999999 L124.19999999999999,118.39999999999999 L130.25,118.39999999999999 L130.25,124.44999999999999 A6.05,6.05 0,0,1 124.19999999999999,130.5 A6.05,6.05 0,0,1 118.14999999999999,124.44999999999999 " fill="black" stroke="none" />
+
+<path d="M130.25,15.55 A6.05,6.05 0,0,1 136.3,9.5 A6.05,6.05 0,0,1 142.35,15.55 L142.35,21.6 L136.3,21.6 L130.25,21.6 L130.25,15.55 " fill="black" stroke="none" />
+
+<rect x="130.25" y="33.7" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="130.25" y="57.9" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="130.25" y="82.1" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="130.25" y="106.3" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="142.35" y="21.6" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="142.35" y="45.8" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="142.35" y="70.0" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="142.35" y="94.2" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<path d="M142.35,124.44999999999999 L142.35,118.39999999999999 L148.4,118.39999999999999 L154.45,118.39999999999999 L154.45,124.44999999999999 A6.05,6.05 0,0,1 148.4,130.5 A6.05,6.05 0,0,1 142.35,124.44999999999999 " fill="black" stroke="none" />
+
+<path d="M154.45,15.55 A6.05,6.05 0,0,1 160.5,9.5 A6.05,6.05 0,0,1 166.54999999999998,15.55 L166.54999999999998,21.6 L160.5,21.6 L154.45,21.6 L154.45,15.55 " fill="black" stroke="none" />
+
+<rect x="154.45" y="33.7" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="154.45" y="57.9" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="154.45" y="82.1" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="154.45" y="106.3" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="166.54999999999998" y="21.6" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="166.54999999999998" y="45.8" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="166.54999999999998" y="70.0" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<rect x="166.54999999999998" y="94.2" width="12.1" height="12.1" fill="black" stroke="none" />
+
+<path d="M166.54999999999998,124.44999999999999 L166.54999999999998,118.39999999999999 L172.6,118.39999999999999 L178.64999999999998,118.39999999999999 L178.64999999999998,124.44999999999999 A6.05,6.05 0,0,1 172.6,130.5 A6.05,6.05 0,0,1 166.54999999999998,124.44999999999999 " fill="black" stroke="none" />
+
+<path d="M178.65,15.55 A6.05,6.05 0,0,1 184.70000000000002,9.5 A6.05,6.05 0,0,1 190.75,15.55 A6.05,6.05 0,0,1 184.70000000000002,21.6 L178.65,21.6 L178.65,15.55 " fill="black" stroke="none" />
+
+<path d="M178.65,39.75 L178.65,33.7 L184.70000000000002,33.7 A6.05,6.05 0,0,1 190.75,39.75 A6.05,6.05 0,0,1 184.70000000000002,45.800000000000004 L178.65,45.800000000000004 L178.65,39.75 " fill="black" stroke="none" />
+
+<path d="M178.65,63.949999999999996 L178.65,57.9 L184.70000000000002,57.9 A6.05,6.05 0,0,1 190.75,63.949999999999996 A6.05,6.05 0,0,1 184.70000000000002,70.0 L178.65,70.0 L178.65,63.949999999999996 " fill="black" stroke="none" />
+
+<path d="M178.65,88.14999999999999 L178.65,82.1 L184.70000000000002,82.1 A6.05,6.05 0,0,1 190.75,88.14999999999999 A6.05,6.05 0,0,1 184.70000000000002,94.19999999999999 L178.65,94.19999999999999 L178.65,88.14999999999999 " fill="black" stroke="none" />
+
+<path d="M178.65,112.35 L178.65,106.3 L184.70000000000002,106.3 A6.05,6.05 0,0,1 190.75,112.35 A6.05,6.05 0,0,1 184.70000000000002,118.39999999999999 L178.65,118.39999999999999 L178.65,112.35 " fill="black" stroke="none" />
+
+<circle cx="63.699999999999996" cy="63.95" r="2.057" fill="white" stroke="none" />
+
+<circle cx="63.699999999999996" cy="76.05" r="2.057" fill="black" stroke="none" />
+
+<circle cx="75.8" cy="76.05" r="2.057" fill="white" stroke="none" />
+
+</g>
+
+</svg>
+
