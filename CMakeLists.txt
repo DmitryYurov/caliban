@@ -7,7 +7,7 @@ project(CalibanProject)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-include(cmake/CPM.cmake)
+include(cmake/get_cpm.cmake)
 
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
