@@ -31,9 +31,9 @@ struct ReprojectionError {
 
         T p[n_r3];
         ceres::QuaternionRotatePoint(obj_2_cam, P, p);
-        p[0] += obj_2_cam[n_so3];
-        p[1] += obj_2_cam[n_so3 + 1];
-        p[2] += obj_2_cam[n_so3 + 2];
+        p[0] += obj_2_cam[n_quat_so3];
+        p[1] += obj_2_cam[n_quat_so3 + 1];
+        p[2] += obj_2_cam[n_quat_so3 + 2];
 
         p[0] = p[0] / p[2];
         p[1] = p[1] / p[2];
@@ -60,7 +60,7 @@ struct ReprojectionError {
         -> std::unique_ptr<ceres::CostFunction>
     {
         constexpr auto n_residuals = n_r2;
-        using AutoDiffCF = ceres::AutoDiffCostFunction<ReprojectionError, n_residuals, n_cam, n_dist, n_se3, n_r3>;
+        using AutoDiffCF = ceres::AutoDiffCostFunction<ReprojectionError, n_residuals, n_cam, n_dist, n_quat_se3, n_r3>;
 
         auto estimator   = std::make_unique<ReprojectionError>(point_2d);
         auto result      = std::make_unique<AutoDiffCF>(estimator.get());
@@ -145,7 +145,7 @@ std::map<size_t, std::vector<int>> selectBase(std::vector<Point3D> target_points
     };
 }
 
-void calibrate(
+double calibrate(
     std::vector<Point3D>& target_points,
     const std::vector<std::map<size_t, Point2D>>& image_points,
     CameraMatrix& camera_matrix,
@@ -201,11 +201,23 @@ void calibrate(
     // Run the solver
     ceres::Solver::Options options;
     options.trust_region_strategy_type   = ceres::LEVENBERG_MARQUARDT;
-    options.linear_solver_type           = ceres::DENSE_QR;
+    options.linear_solver_type           = ceres::SPARSE_NORMAL_CHOLESKY;
     options.minimizer_progress_to_stdout = false;
     options.logging_type                 = ceres::SILENT;
 
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
+
+    if (!summary.IsSolutionUsable()) {
+        throw std::runtime_error("Ceres solver failed, reason: " + summary.message);
+    }
+
+    const size_t n_points = std::accumulate(image_points.begin(), image_points.end(), size_t(0), [](size_t acc, const auto& points_2d) {
+        return acc + n_r2 * points_2d.size();
+    });
+    // 7 is for the 7 dofs fixed by the base points
+    const size_t bessel = n_r3 * target_points.size() + n_cam + n_dist + n_se3 * obj_2_cams.size() - 7;
+
+    return std::sqrt(2. * summary.final_cost / (n_points - bessel)); // 2. is due to the way Ceres computes the cost
 }
 }  // namespace caliban
