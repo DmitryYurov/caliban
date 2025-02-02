@@ -23,10 +23,9 @@ int main(int argc, char *argv[]) {
         .action([](const std::string &value) { return std::stoi(value); });
     program.add_argument("-o", "--output")
         .help("Output path for calibration intermediate and final data. Stays empty by default, which means no data will be saved on disk.")
+        .default_value(std::optional<std::filesystem::path>{})
         .action([](const std::string &value) {
-            return value.empty()
-                ? std::optional<std::filesystem::path>{}
-                : std::optional{std::filesystem::path(value)};
+            return std::optional{std::filesystem::path(value)};
             });
     program.add_argument("-c", "--checkerboard_dimensions")
         .help("Dimensions of the checkerboard pattern. Default is 14x9.")
@@ -149,12 +148,13 @@ int main(int argc, char *argv[]) {
 
     // step 3: calibrate the camera with OpenCV standard calibration method
     {
+        std::cout << std::endl << "Calibration with cv::calibrateCamera" << std::endl;
+
         auto camera_matrix = cv::Matx<double, 3, 3>();
         auto dist_coeffs = cv::Vec<double, 5>();
         std::vector<cv::Mat> rvecs, tvecs;
         const auto rms = cv::calibrateCamera(object_points, corners, images[0].size(), camera_matrix, dist_coeffs, rvecs, tvecs);
 
-        std::cout << std::endl << "Calibration with cv::calibrateCamera" << std::endl;
         std::cout << "RMS Reprojection: " << rms << std::endl;
         std::cout << "Camera matrix: " << camera_matrix << std::endl;
         std::cout << "Distortion coefficients: " << dist_coeffs << std::endl;
@@ -170,6 +170,8 @@ int main(int argc, char *argv[]) {
 
     // step 4: calibrate the camera with OpenCV release object method
     {
+        std::cout << std::endl << "Calibration with cv::calibrateCameraRO" << std::endl;
+
         const int fixed_index = pattern_size.width * (pattern_size.height - 1);
         auto camera_matrix = cv::Matx<double, 3, 3>();
         auto dist_coeffs = cv::Vec<double, 5>();
@@ -177,7 +179,6 @@ int main(int argc, char *argv[]) {
         std::vector<cv::Point3f> new_points;
         const auto rms = cv::calibrateCameraRO(object_points, corners, images[0].size(), fixed_index, camera_matrix, dist_coeffs, rvecs, tvecs, new_points);
 
-        std::cout << std::endl << "Calibration with cv::calibrateCameraRO" << std::endl;
         std::cout << "RMS Reprojection: " << rms << std::endl;
         std::cout << "Camera matrix: " << camera_matrix << std::endl;
         std::cout << "Distortion coefficients: " << dist_coeffs << std::endl;
@@ -193,6 +194,8 @@ int main(int argc, char *argv[]) {
 
     // step 5: calibrate the camera with ceres-based solver
     {
+        std::cout << std::endl << "Calibration with ceres-based solver" << std::endl;
+
         std::vector<caliban::Point3D> target_points;
         for (const auto &op : object_points[0]) {
             target_points.push_back({op.x, op.y, op.z});
@@ -217,7 +220,27 @@ int main(int argc, char *argv[]) {
             auto q = cv::Quat<double>::createFromRvec(rvec);
             obj_2_cams.push_back({q.w, q.x, q.y, q.z, tvec.at<double>(0, 0), tvec.at<double>(1, 0), tvec.at<double>(2, 0)});
         }
-        caliban::calibrate(target_points, image_points, camera_matrix_, distortion_coefficients_, obj_2_cams);
+        const double rms = caliban::calibrate(target_points, image_points, camera_matrix_, distortion_coefficients_, obj_2_cams);
+
+        camera_matrix.at<double>(0, 0) = camera_matrix_[0];
+        camera_matrix.at<double>(0, 2) = camera_matrix_[1];
+        camera_matrix.at<double>(1, 1) = camera_matrix_[2];
+        camera_matrix.at<double>(1, 2) = camera_matrix_[3];
+        auto dist_coeffs = cv::Vec<double, 5>();
+        for (size_t i = 0; i < distortion_coefficients_.size(); ++i) {
+            dist_coeffs[i] = distortion_coefficients_[i];
+        }
+
+        std::cout << "RMS Reprojection: " << rms << std::endl;
+        std::cout << "Camera matrix: " << camera_matrix << std::endl;
+        std::cout << "Distortion coefficients: " << dist_coeffs << std::endl;
+        if (output_dir.has_value()) {
+            cv::FileStorage fs((*output_dir / "calibration_data_ceres.yml").string(), cv::FileStorage::WRITE);
+            fs << "rms" << rms;
+            fs << "camera_matrix" << camera_matrix;
+            fs << "dist_coeffs" << dist_coeffs;
+            fs.release();
+        }
     }
 
     return 0;
