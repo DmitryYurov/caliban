@@ -3,6 +3,7 @@
 
 #include <argparse/argparse.hpp>
 #include <opencv2/opencv.hpp>
+#include <opencv2/core/quaternion.hpp>
 
 #include <caliban/intrinsic.h>
 
@@ -188,6 +189,35 @@ int main(int argc, char *argv[]) {
             fs << "dist_coeffs" << dist_coeffs;
             fs.release();
         }
+    }
+
+    // step 5: calibrate the camera with ceres-based solver
+    {
+        std::vector<caliban::Point3D> target_points;
+        for (const auto &op : object_points[0]) {
+            target_points.push_back({op.x, op.y, op.z});
+        }
+
+        std::vector<std::map<size_t, caliban::Point2D> > image_points;
+        for (const auto &cp : corners) {
+            std::map<size_t, caliban::Point2D> image_points_per_image;
+            for (size_t i = 0; i < cp.size(); ++i) {
+                image_points_per_image[i] = {cp[i].x, cp[i].y};
+            }
+            image_points.push_back(std::move(image_points_per_image));
+        }
+
+        auto camera_matrix = cv::initCameraMatrix2D(object_points, corners, images[0].size(), 1.0);
+        caliban::CameraMatrix camera_matrix_{camera_matrix.at<double>(0, 0), camera_matrix.at<double>(0, 2), camera_matrix.at<double>(1, 1), camera_matrix.at<double>(1, 2)};
+        caliban::DistortionCoefficients distortion_coefficients_{0, 0, 0, 0, 0};
+        std::vector<caliban::QuatSE3> obj_2_cams;
+        for (size_t i = 0; i < images.size(); ++i) {
+            cv::Mat rvec, tvec;
+            cv::solvePnP(object_points[i], corners[i], camera_matrix, cv::noArray(), rvec, tvec, false, cv::SOLVEPNP_ITERATIVE);
+            auto q = cv::Quat<double>::createFromRvec(rvec);
+            obj_2_cams.push_back({q.w, q.x, q.y, q.z, tvec.at<double>(0, 0), tvec.at<double>(1, 0), tvec.at<double>(2, 0)});
+        }
+        caliban::calibrate(target_points, image_points, camera_matrix_, distortion_coefficients_, obj_2_cams);
     }
 
     return 0;
