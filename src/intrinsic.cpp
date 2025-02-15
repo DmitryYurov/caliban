@@ -84,64 +84,38 @@ Point3D crossProduct(const Point3D& p1, const Point3D& p2) {
     };
 }
 
-std::vector<int> selectFixedDims(const Point3D& p1, const Point3D& p2) {
-    const auto cp = crossProduct(p1, p2);
-    const auto iter = std::max_element(cp.begin(), cp.end(), [](const auto& lhs, const auto& rhs) {
-        return std::abs(lhs) < std::abs(rhs);
-    });
-    const size_t i_max = std::distance(cp.begin(), iter);
-
-    return i_max == 0 ? std::vector<int>{1, 2} : i_max == 1 ? std::vector<int>{0, 2} : std::vector<int>{0, 1};
-}
-
+// We assume for this selection, that all points are in the same plane defined by the condition z = 0
 std::map<size_t, std::vector<int>> selectBase(std::vector<Point3D> target_points) {
     if (target_points.size() < 3) {
         throw std::runtime_error("Not enough points to select from");
     }
 
-    // first selected point is the target's center of origin - it makes sense to select the point with the smallest distance from (0, 0, 0)
-    const auto base_iter = std::min_element(target_points.begin(), target_points.end(), [](const auto& lhs, const auto& rhs) {
-        return norm2(lhs) < norm2(rhs);
-    });
-
-    const size_t i_base = std::distance(target_points.begin(), base_iter);
-    auto p0 = target_points[i_base];
-    std::transform(target_points.begin(), target_points.end(), target_points.begin(), [&p0](const auto& p) {
+    // we always take the very first and very last points to define the base
+    const auto p0_iter = target_points.begin();
+    const size_t p0_i = std::distance(target_points.begin(), p0_iter);
+    std::transform(target_points.begin(), target_points.end(), target_points.begin(), [p0 = *p0_iter](const auto& p) {
         return Point3D{p[0] - p0[0], p[1] - p0[1], p[2] - p0[2]};
     });
+    const auto p0 = *p0_iter;
 
-    // now selecting two points to form the base of the coordinate system
-    // doing it by selecting the least collinear points except from the base point
-    // "least collinear" means the points that have the biggest cross product
-    std::map<std::pair<size_t, size_t>, double> cross_products;
-    for (size_t i = 0; i < target_points.size(); ++i) {
-        for (size_t j = i + 1; j < target_points.size(); ++j) {
-            if (i == i_base || j == i_base) {
-                continue;
-            }
+    const auto p2_iter = std::prev(target_points.end());
+    const size_t p2_i = std::distance(target_points.begin(), p2_iter);
+    const auto p2 = *p2_iter;
 
-            const auto& p1 = target_points[i];
-            const auto& p2 = target_points[j];
-            cross_products[{i, j}] = norm2(crossProduct(p1, p2));
-        }
-    }
-
-    const auto max_iter = std::max_element(cross_products.begin(), cross_products.end(), [](const auto& lhs, const auto& rhs) {
-        return lhs.second < rhs.second;
+    // now selecting the third point to form the base of the coordinate system
+    // doing it by selecting the point that produces the biggest cross product with the p2
+    const auto p1_iter = std::max_element(std::next(p0_iter), p2_iter, [p2](const auto& lhs, const auto& rhs) {
+        return norm2(crossProduct(lhs, p2)) < norm2(crossProduct(rhs, p2));
     });
-
-    if (max_iter->second < std::numeric_limits<double>::epsilon()) {
-        throw std::runtime_error("All points in the target are collinear");
+    if (norm2(crossProduct(*p1_iter, p2)) < std::numeric_limits<double>::epsilon()) {
+        throw std::runtime_error("Search for the base point failed");
     }
-
-    const auto& p1 = target_points[max_iter->first.first];
-    const auto& p2 = target_points[max_iter->first.second];
-    const auto fixed_dims = selectFixedDims(p1, p2);
+    const size_t p1_i = std::distance(target_points.begin(), p1_iter);
 
     return {
-        { i_base, {0, 1, 2}},
-        { max_iter->first.first, fixed_dims },
-        { max_iter->first.second, fixed_dims }
+        { p0_i, {0, 1, 2} },
+        { p1_i, {0, 1, 2} },
+        { p2_i, {2} }
     };
 }
 
