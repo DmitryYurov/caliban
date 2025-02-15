@@ -7,6 +7,23 @@
 
 #include <caliban/intrinsic.h>
 
+static void object_point_statistics(const std::vector<cv::Point3f>& lhs, const std::vector<cv::Point3f>& rhs)
+{
+    if (lhs.size() != rhs.size()) {
+        std::cerr << "Sizes of the point sets are different" << std::endl;
+        return;
+    }
+    std::list<double> diffs;
+    std::transform(lhs.begin(), lhs.end(), rhs.begin(), std::back_inserter(diffs), [](const cv::Point3f& l, const cv::Point3f& r) {
+        return (l - r).ddot(l - r);
+    });
+    auto max_it = std::max_element(diffs.begin(), diffs.end());
+    const auto avr_diff = std::sqrt(std::accumulate(diffs.begin(), diffs.end(), 0.0) / diffs.size());
+
+    std::cout << "Max difference from expected: " << std::sqrt(*max_it) << " at index " << std::distance(diffs.begin(), max_it) << std::endl;
+    std::cout << "Average difference from expected: " << avr_diff << std::endl;
+}
+
 int main(int argc, char *argv[]) {
     argparse::ArgumentParser program("calib_app", "0.0.0");
     program.add_argument("-p", "--path")
@@ -105,14 +122,16 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    // step 2: detect chessboard corners in the images
+    // step 2: detect chessboard corners in the images and drop the images in case of failure
     std::vector<std::vector<cv::Point2f>> corners{};
     {
-        constexpr int detection_flags = cv::CALIB_CB_MARKER | cv::CALIB_CB_ACCURACY;
+        constexpr int detection_flags = cv::CALIB_CB_MARKER | cv::CALIB_CB_ACCURACY | cv::CALIB_CB_EXHAUSTIVE;
+        std::set<size_t> images_to_remove;
         for (size_t i = 0; i < images.size(); ++i) {
             std::vector<cv::Point2f> corners_per_image;
             if (!cv::findChessboardCornersSB(images[i], pattern_size, corners_per_image, detection_flags)) {
                 std::cerr << "Chessboard pattern for image " << i << " not found" << std::endl;
+                images_to_remove.insert(i);
                 continue;
             }
 
@@ -125,15 +144,26 @@ int main(int argc, char *argv[]) {
 
             corners.push_back(std::move(corners_per_image));
         }
+        
+        // cleaning up the image list
+        std::vector<cv::Mat> filtered_images;
+        for (size_t i = 0; i < images.size(); ++i) {
+            if (images_to_remove.contains(i)) {
+                continue;
+            }
+            filtered_images.push_back(images[i]);
+        }
+
+        images = std::move(filtered_images);
     }
 
-    if (corners.size() != images.size()) {
-        std::cerr << "Not all images have the chessboard pattern detected." << std::endl;
+    if (images.size() < 4) { // FIXME: condition on the number of point measurements
+        std::cerr << "Not enough data for calibration" << std::endl;
         return 1;
     }
 
     // step 3: fill the object points
-    // absolute scale is not important, only relative positions are important
+    // absolute scale is not important, only the relative positions
     std::vector<std::vector<cv::Point3f>> object_points{};
     {
         std::vector<cv::Point3f> op_local{};
@@ -182,6 +212,8 @@ int main(int argc, char *argv[]) {
         std::cout << "RMS Reprojection: " << rms << std::endl;
         std::cout << "Camera matrix: " << camera_matrix << std::endl;
         std::cout << "Distortion coefficients: " << dist_coeffs << std::endl;
+
+        object_point_statistics(object_points[0], new_points);
 
         if (output_dir.has_value()) {
             cv::FileStorage fs((*output_dir / "calibration_data_opencv_ro.yml").string(), cv::FileStorage::WRITE);
@@ -234,6 +266,13 @@ int main(int argc, char *argv[]) {
         std::cout << "RMS Reprojection: " << rms << std::endl;
         std::cout << "Camera matrix: " << camera_matrix << std::endl;
         std::cout << "Distortion coefficients: " << dist_coeffs << std::endl;
+
+        std::vector<cv::Point3f> target_points_cv;
+        for (const auto &tp : target_points) {
+            target_points_cv.push_back({tp[0], tp[1], tp[2]});
+        }
+        object_point_statistics(object_points[0], target_points_cv);
+
         if (output_dir.has_value()) {
             cv::FileStorage fs((*output_dir / "calibration_data_ceres.yml").string(), cv::FileStorage::WRITE);
             fs << "rms" << rms;
