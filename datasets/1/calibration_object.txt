@@ -1,0 +1,2 @@
+tile size: 28.5 mm
+8x6 chessboard
