@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
             return std::optional{std::filesystem::path(value)};
             });
     program.add_argument("-c", "--checkerboard_dimensions")
-        .help("Dimensions of the checkerboard pattern. Default is 14x9.")
+        .help("Dimensions of the checkerboard pattern.")
         .default_value(cv::Size{14, 9})
         .action([](const std::string &value) {
             cv::Size pattern_size;
@@ -55,6 +55,10 @@ int main(int argc, char *argv[]) {
             ss >> pattern_size.height;
             return pattern_size;
         });
+    program.add_argument("-r", "--no-radon")
+        .help("Use a standard checkerboard instead of the one with radon markers.")
+        .default_value(false)
+        .implicit_value(true);
     program.add_argument("-h", "--help")
         .help("Print this help message.")
         .default_value(false)
@@ -125,7 +129,8 @@ int main(int argc, char *argv[]) {
     // step 2: detect chessboard corners in the images and drop the images in case of failure
     std::vector<std::vector<cv::Point2f>> corners{};
     {
-        constexpr int detection_flags = cv::CALIB_CB_MARKER | cv::CALIB_CB_ACCURACY | cv::CALIB_CB_EXHAUSTIVE;
+        constexpr int default_flags = cv::CALIB_CB_ACCURACY | cv::CALIB_CB_EXHAUSTIVE;
+        const int detection_flags = program.get<bool>("--no-radon") ? default_flags : int(cv::CALIB_CB_MARKER | default_flags);
         std::set<size_t> images_to_remove;
         for (size_t i = 0; i < images.size(); ++i) {
             std::vector<cv::Point2f> corners_per_image;
