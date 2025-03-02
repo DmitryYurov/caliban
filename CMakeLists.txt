@@ -17,6 +17,7 @@ CPMAddPackage(
         OPTIONS "EIGEN_BUILD_DOC OFF"
         "EIGEN_BUILD_PKGCONFIG OFF"
         "EIGEN_BUILD_DOC OFF"
+        "EIGEN_BUILD_TESTING OFF"
 )
 
 CPMAddPackage(
@@ -24,8 +25,23 @@ CPMAddPackage(
         GIT_TAG 2.2.0
         OPTIONS "MINIGLOG ON"
         "PROVIDE_UNINSTALL_TARGET OFF"
+        "BUILD_TESTING OFF"
 )
+
+CPMAddPackage(
+        GITHUB_REPOSITORY google/googletest
+        GIT_TAG v1.16.0
+)
+
+CPMAddPackage(
+        GITHUB_REPOSITORY p-ranav/argparse
+        GIT_TAG v3.2
+)
+
+find_package(OpenCV REQUIRED)
 
 # add subdirectories
 add_subdirectory(src)
 add_subdirectory(app)
+
+add_subdirectory(tests)
