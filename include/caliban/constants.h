@@ -1,6 +1,8 @@
 #ifndef CALIBAN_CONSTANTS_H
 #define CALIBAN_CONSTANTS_H
 
+#include <cstddef>
+
 namespace caliban {
 
 constexpr size_t n_r2        = 2;  // dimensionality of R^2 space

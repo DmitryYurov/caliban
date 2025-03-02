@@ -10,7 +10,7 @@
 
 namespace caliban {
 
-double calibrate(
+double calibrate_intrinsics(
     std::vector<Point3D>& target_points,
     const std::vector<std::map<size_t, Point2D>>& image_points,
     CameraMatrix& camera_matrix,

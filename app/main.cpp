@@ -257,7 +257,7 @@ int main(int argc, char *argv[]) {
             auto q = cv::Quat<double>::createFromRvec(rvec);
             obj_2_cams.push_back({q.w, q.x, q.y, q.z, tvec.at<double>(0, 0), tvec.at<double>(1, 0), tvec.at<double>(2, 0)});
         }
-        const double rms = caliban::calibrate(target_points, image_points, camera_matrix_, distortion_coefficients_, obj_2_cams);
+        const double rms = caliban::calibrate_intrinsics(target_points, image_points, camera_matrix_, distortion_coefficients_, obj_2_cams);
 
         camera_matrix.at<double>(0, 0) = camera_matrix_[0];
         camera_matrix.at<double>(0, 2) = camera_matrix_[1];
