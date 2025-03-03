@@ -1,3 +1,6 @@
+
+add_definitions(-DTEST_DATA_PATH="${PROJECT_SOURCE_DIR}/datasets")
+
 add_executable(intrinsic_tests intrinsic_tests.cpp)
 target_link_libraries(intrinsic_tests PRIVATE ${OpenCV_LIBS} calib GTest::gtest_main)
 target_include_directories(intrinsic_tests PRIVATE ../include ${OpenCV_INCLUDE_DIRS})
