@@ -167,126 +167,41 @@ int main(int argc, char* argv[]) {
 
     // step 3: fill the object points
     // absolute scale is not important, only the relative positions
-    std::vector<std::vector<cv::Point3f>> object_points{};
+    std::vector<cv::Point3f> target_points{};
     {
-        std::vector<cv::Point3f> op_local{};
         for (int i = 0; i < pattern_size.height; ++i) {
             for (int j = 0; j < pattern_size.width; ++j) {
-                op_local.push_back(cv::Point3f(j, i, 0));
+                target_points.push_back(cv::Point3f(j, i, 0));
             }
         }
-
-        object_points.resize(images.size(), op_local);
     }
 
-    // step 3: calibrate the camera with OpenCV standard calibration method
-    {
-        std::cout << std::endl << "Calibration with cv::calibrateCamera" << std::endl;
-
-        auto camera_matrix = cv::Matx<double, 3, 3>();
-        auto dist_coeffs = cv::Vec<double, 5>();
-        std::vector<cv::Mat> rvecs, tvecs;
-        const auto rms =
-            cv::calibrateCamera(object_points, corners, images[0].size(), camera_matrix, dist_coeffs, rvecs, tvecs);
-
-        std::cout << "RMS Reprojection: " << rms << std::endl;
-        std::cout << "Camera matrix: " << camera_matrix << std::endl;
-        std::cout << "Distortion coefficients: " << dist_coeffs << std::endl;
-
-        if (output_dir.has_value()) {
-            cv::FileStorage fs((*output_dir / "calibration_data_opencv.yml").string(), cv::FileStorage::WRITE);
-            fs << "rms" << rms;
-            fs << "camera_matrix" << camera_matrix;
-            fs << "dist_coeffs" << dist_coeffs;
-            fs.release();
-        }
-    }
-
-    // step 4: calibrate the camera with OpenCV release object method
-    {
-        std::cout << std::endl << "Calibration with cv::calibrateCameraRO" << std::endl;
-
-        const int fixed_index = pattern_size.width * (pattern_size.height - 1);
-        auto camera_matrix = cv::Matx<double, 3, 3>();
-        auto dist_coeffs = cv::Vec<double, 5>();
-        std::vector<cv::Mat> rvecs, tvecs;
-        std::vector<cv::Point3f> new_points;
-        const auto rms = cv::calibrateCameraRO(object_points, corners, images[0].size(), fixed_index, camera_matrix,
-                                               dist_coeffs, rvecs, tvecs, new_points);
-
-        std::cout << "RMS Reprojection: " << rms << std::endl;
-        std::cout << "Camera matrix: " << camera_matrix << std::endl;
-        std::cout << "Distortion coefficients: " << dist_coeffs << std::endl;
-
-        object_point_statistics(object_points[0], new_points);
-
-        if (output_dir.has_value()) {
-            cv::FileStorage fs((*output_dir / "calibration_data_opencv_ro.yml").string(), cv::FileStorage::WRITE);
-            fs << "rms" << rms;
-            fs << "camera_matrix" << camera_matrix;
-            fs << "dist_coeffs" << dist_coeffs;
-            fs.release();
-        }
-    }
-
-    // step 5: calibrate the camera with ceres-based solver
+    // step 4: calibrate the camera with ceres-based solver
     {
         std::cout << std::endl << "Calibration with ceres-based solver" << std::endl;
 
-        std::vector<caliban::Point3D> target_points;
-        for (const auto& op : object_points[0]) {
-            target_points.push_back({op.x, op.y, op.z});
-        }
-
-        std::vector<std::map<size_t, caliban::Point2D>> image_points;
+        std::vector<std::map<size_t, cv::Point2f>> image_points;
         for (const auto& cp : corners) {
-            std::map<size_t, caliban::Point2D> image_points_per_image;
+            std::map<size_t, cv::Point2f> image_points_per_image;
             for (size_t i = 0; i < cp.size(); ++i) {
-                image_points_per_image[i] = {cp[i].x, cp[i].y};
+                image_points_per_image[i] = cp[i];
             }
             image_points.push_back(std::move(image_points_per_image));
         }
 
-        auto camera_matrix = cv::initCameraMatrix2D(object_points, corners, images[0].size(), 1.0);
-        caliban::CameraMatrix camera_matrix_{camera_matrix.at<double>(0, 0), camera_matrix.at<double>(0, 2),
-                                             camera_matrix.at<double>(1, 1), camera_matrix.at<double>(1, 2)};
-        caliban::DistortionCoefficients distortion_coefficients_{0, 0, 0, 0, 0};
-        std::vector<caliban::QuatSE3> obj_2_cams;
-        for (size_t i = 0; i < images.size(); ++i) {
-            cv::Mat rvec, tvec;
-            cv::solvePnP(object_points[i], corners[i], camera_matrix, cv::noArray(), rvec, tvec, false,
-                         cv::SOLVEPNP_ITERATIVE);
-            auto q = cv::Quat<double>::createFromRvec(rvec);
-            obj_2_cams.push_back(
-                {q.w, q.x, q.y, q.z, tvec.at<double>(0, 0), tvec.at<double>(1, 0), tvec.at<double>(2, 0)});
-        }
-        const double rms = caliban::calibrate_intrinsics(target_points, image_points, camera_matrix_,
-                                                         distortion_coefficients_, obj_2_cams);
+        const auto intrinsic_result = caliban::calibrate_intrinsics(target_points, image_points, images[0].size());
 
-        camera_matrix.at<double>(0, 0) = camera_matrix_[0];
-        camera_matrix.at<double>(0, 2) = camera_matrix_[1];
-        camera_matrix.at<double>(1, 1) = camera_matrix_[2];
-        camera_matrix.at<double>(1, 2) = camera_matrix_[3];
-        auto dist_coeffs = cv::Vec<double, 5>();
-        for (size_t i = 0; i < distortion_coefficients_.size(); ++i) {
-            dist_coeffs[i] = distortion_coefficients_[i];
-        }
+        std::cout << "RMS Reprojection: " << intrinsic_result.rms_repro << std::endl;
+        std::cout << "Camera matrix: " << intrinsic_result.camera_matrix << std::endl;
+        std::cout << "Distortion coefficients: " << intrinsic_result.dist_coeffs << std::endl;
 
-        std::cout << "RMS Reprojection: " << rms << std::endl;
-        std::cout << "Camera matrix: " << camera_matrix << std::endl;
-        std::cout << "Distortion coefficients: " << dist_coeffs << std::endl;
-
-        std::vector<cv::Point3f> target_points_cv;
-        for (const auto& tp : target_points) {
-            target_points_cv.push_back({tp[0], tp[1], tp[2]});
-        }
-        object_point_statistics(object_points[0], target_points_cv);
+        object_point_statistics(target_points, intrinsic_result.target_points);
 
         if (output_dir.has_value()) {
             cv::FileStorage fs((*output_dir / "calibration_data_ceres.yml").string(), cv::FileStorage::WRITE);
-            fs << "rms" << rms;
-            fs << "camera_matrix" << camera_matrix;
-            fs << "dist_coeffs" << dist_coeffs;
+            fs << "rms" << intrinsic_result.rms_repro;
+            fs << "camera_matrix" << intrinsic_result.camera_matrix;
+            fs << "dist_coeffs" << intrinsic_result.dist_coeffs;
             fs.release();
         }
     }

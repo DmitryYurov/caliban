@@ -3,7 +3,7 @@
 
 #include <array>
 
-#include "caliban/constants.h"
+#include "constants.h"
 
 namespace caliban {
 

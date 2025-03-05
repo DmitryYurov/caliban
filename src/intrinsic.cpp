@@ -1,5 +1,12 @@
 #include "caliban/intrinsic.h"
 
+#include "constants.h"
+#include "types.h"
+#include "utils.h"
+
+#include <opencv2/calib3d.hpp>
+#include <opencv2/core/quaternion.hpp>
+
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
 
@@ -110,11 +117,11 @@ std::map<size_t, std::vector<int>> selectBase(std::vector<Point3D> target_points
     return {{p0_i, {0, 1, 2}}, {p1_i, {0, 1, 2}}, {p2_i, {2}}};
 }
 
-double calibrate_intrinsics(std::vector<Point3D>& target_points,
-                            const std::vector<std::map<size_t, Point2D>>& image_points,
-                            CameraMatrix& camera_matrix,
-                            DistortionCoefficients& distortion_coefficients,
-                            std::vector<QuatSE3> obj_2_cams) {
+double calibrate(std::vector<Point3D>& target_points,
+                 const std::vector<std::map<size_t, Point2D>>& image_points,
+                 CameraMatrix& camera_matrix,
+                 DistortionCoefficients& distortion_coefficients,
+                 std::vector<QuatSE3> obj_2_cams) {
     // define the manifold for the SE3 transformation
     auto se3 = ceres::ProductManifold{ceres::QuaternionManifold{}, ceres::EuclideanManifold<3>{}};
 
@@ -180,5 +187,57 @@ double calibrate_intrinsics(std::vector<Point3D>& target_points,
     const size_t bessel = n_r3 * target_points.size() + n_cam + n_dist + n_se3 * obj_2_cams.size() - 7;
 
     return std::sqrt(2. * summary.final_cost / (n_points - bessel));  // 2. is due to the way Ceres computes the cost
+}
+
+IntrinsicsResult calibrate_intrinsics(const std::vector<cv::Point3f>& target_points_cv,
+                                      const std::vector<std::map<size_t, cv::Point2f>>& image_points_cv,
+                                      const cv::Size& image_size) {
+    // preparing starting estimates for the camera matrix, distortion coefficients, and object to camera transformations
+    caliban::DistortionCoefficients dist_coeffs{0, 0, 0, 0, 0};
+    caliban::CameraMatrix camera_matrix{};
+    std::vector<caliban::QuatSE3> obj_2_cams;
+    {
+        std::vector<std::vector<cv::Point3f>> target_points_cv_vec;
+        target_points_cv_vec.reserve(image_points_cv.size());
+
+        std::vector<std::vector<cv::Point2f>> image_points_cv_vec;
+        image_points_cv_vec.reserve(image_points_cv.size());
+
+        for (size_t i = 0; i < image_points_cv.size(); ++i) {
+            std::vector<cv::Point3f> tp_loc;
+            std::vector<cv::Point2f> ip_loc;
+            for (const auto& [index, point] : image_points_cv[i]) {
+                tp_loc.push_back(target_points_cv[index]);
+                ip_loc.push_back(point);
+            }
+            target_points_cv_vec.push_back(std::move(tp_loc));
+            image_points_cv_vec.push_back(std::move(ip_loc));
+        }
+
+        auto camera_matrix_cv = cv::initCameraMatrix2D(target_points_cv_vec, image_points_cv_vec, image_size);
+        camera_matrix = {camera_matrix_cv.at<double>(0, 0), camera_matrix_cv.at<double>(0, 2),
+                         camera_matrix_cv.at<double>(1, 1), camera_matrix_cv.at<double>(1, 2)};
+
+        for (size_t i = 0; i < image_points_cv.size(); ++i) {
+            cv::Mat rvec, tvec;
+            cv::solvePnP(target_points_cv_vec[i], image_points_cv_vec[i], camera_matrix_cv, cv::noArray(), rvec, tvec,
+                         false, cv::SOLVEPNP_ITERATIVE);
+            auto q = cv::Quat<double>::createFromRvec(rvec);
+            obj_2_cams.push_back(
+                {q.w, q.x, q.y, q.z, tvec.at<double>(0, 0), tvec.at<double>(1, 0), tvec.at<double>(2, 0)});
+        }
+    }
+
+    // convert opencv types to internal types
+    auto target_points = convert(target_points_cv);
+    auto image_points = convert(image_points_cv);
+
+    IntrinsicsResult result;
+    result.rms_repro = calibrate(target_points, image_points, camera_matrix, dist_coeffs, obj_2_cams);
+    result.camera_matrix << camera_matrix[0], 0, camera_matrix[1], 0, camera_matrix[2], camera_matrix[3], 0, 0, 1;
+    result.dist_coeffs << dist_coeffs[0], dist_coeffs[1], dist_coeffs[2], dist_coeffs[3], dist_coeffs[4];
+    result.target_points = convert(target_points);
+
+    return result;
 }
 }  // namespace caliban

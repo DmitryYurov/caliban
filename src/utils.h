@@ -1,9 +1,11 @@
 #ifndef CALIBAN_UTILS_H
 #define CALIBAN_UTILS_H
 
-#include <ceres/rotation.h>
+#include "constants.h"
 
-#include "caliban/constants.h"
+#include <opencv2/core.hpp>
+
+#include <ceres/rotation.h>
 
 namespace caliban {
 /**
@@ -45,6 +47,41 @@ void InverseSE3(const T* const in, T* out) {
     out[n_quat_so3] = -out[n_quat_so3];
     out[n_quat_so3 + 1] = -out[n_quat_so3 + 1];
     out[n_quat_so3 + 2] = -out[n_quat_so3 + 2];
+}
+
+inline std::vector<Point3D> convert(const std::vector<cv::Point3f>& points_cv) {
+    std::vector<Point3D> points;
+    for (const auto& op : points_cv) {
+        points.push_back({op.x, op.y, op.z});
+    }
+
+    return points;
+}
+
+inline std::vector<cv::Point3f> convert(const std::vector<Point3D>& points) {
+    std::vector<cv::Point3f> points_cv;
+    for (const auto& op : points) {
+        points_cv.push_back({
+            static_cast<float>(op[0]),
+            static_cast<float>(op[1]),
+            static_cast<float>(op[2]),
+        });
+    }
+
+    return points_cv;
+}
+
+inline std::vector<std::map<size_t, Point2D>> convert(const std::vector<std::map<size_t, cv::Point2f>>& points_cv) {
+    std::vector<std::map<size_t, Point2D>> points;
+    for (const auto& cp : points_cv) {
+        std::map<size_t, Point2D> points_loc;
+        for (auto [index, point] : cp) {
+            points_loc[index] = {point.x, point.y};
+        }
+        points.push_back(std::move(points_loc));
+    }
+
+    return points;
 }
 }  // namespace caliban
 
