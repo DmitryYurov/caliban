@@ -23,7 +23,7 @@ enum ExtrinsicFlags {
  * on the robot end-effector (EyeInHand). The equation solved stays the same, but the computation of the
  * minimized reprojection error is different.
  *
- * @param type The type of the extrinsic calibration (EyeInHand or EyeToHand)
+ * @param calib_type The type of the extrinsic calibration (EyeInHand or EyeToHand)
  * @param target_points The 3D points in the world coordinate system. In case the flag OptimizeScale is set,
  *                      the scale of the target points will be optimized as well.
  * @param image_points The 2D points in the image coordinate system. The map key corresponds to the index of the target
@@ -35,17 +35,19 @@ enum ExtrinsicFlags {
  * hand)
  * @param camera_matrix The camera matrix
  * @param distortion_coefficients The distortion coefficients
+ * @param scale The scale of the target points, is optimized if the OptimizeScale flag is set
  * @param flags Flags for the optimization
  * @return A tuple with the optimized base-to-target and flange-to-camera transformations
  */
-double calibrate_extrinsics(ExtrinsicCalibType type,
+double calibrate_extrinsics(ExtrinsicCalibType calib_type,
                             std::vector<Point3D>& target_points,
                             const std::vector<std::map<size_t, Point2D>>& image_points,
                             const std::vector<QuatSE3>& Bs,
                             QuatSE3& X,
                             QuatSE3& Z,
-                            const CameraMatrix& camera_matrix,
-                            const DistortionCoefficients& distortion_coefficients,
+                            CameraMatrix& camera_matrix,
+                            DistortionCoefficients& distortion_coefficients,
+                            double scale = 1.0,
                             int flags = ExtrinsicFlags::None);
 
 }  // namespace caliban

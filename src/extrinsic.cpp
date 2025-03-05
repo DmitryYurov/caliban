@@ -99,15 +99,74 @@ struct ReprojectionError {
     const Point3D m_base{};
 };
 
-double calibrate_extrinsics(ExtrinsicCalibType type,
+double calibrate_extrinsics(ExtrinsicCalibType calib_type,
                             std::vector<Point3D>& target_points,
                             const std::vector<std::map<size_t, Point2D>>& image_points,
                             const std::vector<QuatSE3>& Bs,
                             QuatSE3& X,
                             QuatSE3& Z,
-                            const CameraMatrix& camera_matrix,
-                            const DistortionCoefficients& distortion_coefficients,
+                            CameraMatrix& camera_matrix,
+                            DistortionCoefficients& distortion_coefficients,
+                            double scale,
                             int flags) {
-    return 0.0;
+    // define the SE3 manifold
+    auto se3 = ceres::ProductManifold{ceres::QuaternionManifold{}, ceres::EuclideanManifold<3>{}};
+
+    ceres::Problem::Options problem_options;
+    problem_options.cost_function_ownership = ceres::TAKE_OWNERSHIP;
+    problem_options.manifold_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
+    auto problem = ceres::Problem(problem_options);
+
+    // adding parameter blocks
+    problem.AddParameterBlock(camera_matrix.data(), camera_matrix.size());
+    problem.SetParameterBlockConstant(camera_matrix.data());  // camera matrix is fixed
+    problem.AddParameterBlock(distortion_coefficients.data(), distortion_coefficients.size());
+    problem.SetParameterBlockConstant(distortion_coefficients.data());  // distortion coefficients are fixed
+    problem.AddParameterBlock(X.data(), X.size(), &se3);
+    problem.AddParameterBlock(Z.data(), Z.size(), &se3);
+
+    // add scaling parameter
+    problem.AddParameterBlock(&scale, 1);
+    if (flags & ExtrinsicFlags::OptimizeScale == 0) {
+        problem.SetParameterBlockConstant(&scale);
+    }
+
+    // take the very first target point as the base for rescaling
+    const auto base_point = target_points[0];
+
+    // Add residual blocks
+    for (size_t i_im = 0; i_im < image_points.size(); ++i_im) {
+        const auto& points_per_im = image_points[i_im];
+        const auto& B = Bs[i_im];
+        for (const auto& [tp_index, point_2d] : points_per_im) {
+            const auto& point_3d = target_points[tp_index];
+            auto cost_function = ReprojectionError::Create(calib_type, B, point_2d, point_3d, base_point);
+            problem.AddResidualBlock(cost_function.release(),
+                                     nullptr,  // loss function (nullptr = default)
+                                     X.data(), camera_matrix.data(), distortion_coefficients.data(), Z.data(), &scale);
+        }
+    }
+
+    // Run the solver
+    ceres::Solver::Options options;
+    options.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
+    options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY;
+    options.minimizer_progress_to_stdout = false;
+    options.logging_type = ceres::SILENT;
+
+    ceres::Solver::Summary summary;
+    ceres::Solve(options, &problem, &summary);
+
+    if (!summary.IsSolutionUsable()) {
+        throw std::runtime_error("Ceres solver failed, reason: " + summary.message);
+    }
+
+    const size_t n_points =
+        std::accumulate(image_points.begin(), image_points.end(), size_t(0),
+                        [](size_t acc, const auto& points_2d) { return acc + n_r2 * points_2d.size(); });
+
+    const size_t bessel = flags & ExtrinsicFlags::OptimizeScale == 0 ? n_se3 * 2 : n_se3 * 2 + 1;
+
+    return std::sqrt(2. * summary.final_cost / (n_points - bessel));  // 2. is due to the way Ceres computes the cost
 }
 }  // namespace caliban
