@@ -1,0 +1,9 @@
+BasedOnStyle: Chromium
+AllowAllArgumentsOnNextLine: false
+BreakConstructorInitializers: BeforeColon
+BreakConstructorInitializersBeforeComma: true
+ConstructorInitializerAllOnOneLineOrOnePerLine: false # always one per line
+SortIncludes: true
+FixNamespaceComments: true
+ColumnLimit: 120
+IndentWidth: 4

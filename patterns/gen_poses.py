@@ -123,5 +123,5 @@ for key in ['colors']:
 bl_to_cv = np.array([[1., 0, 0, 0, ], [0, -1., 0, 0], [0, 0, -1., 0], [0, 0, 0, 1.]])
 for i, img in enumerate(data["colors"]):
     save_cam = np.linalg.inv(bl_to_cv) @ cams[i] @ bl_to_cv
-    np.savetxt(os.path.join(output_dir, f"cam_pose_{i}.txt"), save_cam)
+    # np.savetxt(os.path.join(output_dir, f"cam_pose_{i}.txt"), save_cam)
     cv2.imwrite(os.path.join(output_dir, f"image_{i:03d}.png"), img)
