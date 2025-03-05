@@ -2,52 +2,51 @@
 #include <random>
 
 #include <argparse/argparse.hpp>
-#include <opencv2/opencv.hpp>
 #include <opencv2/core/quaternion.hpp>
+#include <opencv2/opencv.hpp>
 
 #include <caliban/intrinsic.h>
 
-static void object_point_statistics(const std::vector<cv::Point3f>& lhs, const std::vector<cv::Point3f>& rhs)
-{
+static void object_point_statistics(const std::vector<cv::Point3f>& lhs, const std::vector<cv::Point3f>& rhs) {
     if (lhs.size() != rhs.size()) {
         std::cerr << "Sizes of the point sets are different" << std::endl;
         return;
     }
     std::list<double> diffs;
-    std::transform(lhs.begin(), lhs.end(), rhs.begin(), std::back_inserter(diffs), [](const cv::Point3f& l, const cv::Point3f& r) {
-        return (l - r).ddot(l - r);
-    });
+    std::transform(lhs.begin(), lhs.end(), rhs.begin(), std::back_inserter(diffs),
+                   [](const cv::Point3f& l, const cv::Point3f& r) { return (l - r).ddot(l - r); });
     auto max_it = std::max_element(diffs.begin(), diffs.end());
     const auto avr_diff = std::sqrt(std::accumulate(diffs.begin(), diffs.end(), 0.0) / diffs.size());
 
-    std::cout << "Max difference from expected: " << std::sqrt(*max_it) << " at index " << std::distance(diffs.begin(), max_it) << std::endl;
+    std::cout << "Max difference from expected: " << std::sqrt(*max_it) << " at index "
+              << std::distance(diffs.begin(), max_it) << std::endl;
     std::cout << "Average difference from expected: " << avr_diff << std::endl;
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     argparse::ArgumentParser program("calib_app", "0.0.0");
     program.add_argument("-p", "--path")
         .help("Path to the folder with calibration images. Only .png files will be picked.")
         .required()
-        .action([](const std::string &value) { return std::filesystem::absolute(std::filesystem::path(value)); });
+        .action([](const std::string& value) { return std::filesystem::absolute(std::filesystem::path(value)); });
     program.add_argument("-n", "--number_of_images")
         .help("Number of images to use for calibration. Default is 10.")
         .default_value(10)
-        .action([](const std::string &value) { return std::stoi(value); });
+        .action([](const std::string& value) { return std::stoi(value); });
     program.add_argument("-s", "--seed")
         .help("Random seed for image selection. Defaults to 1234")
         .default_value(1234)
-        .action([](const std::string &value) { return std::stoi(value); });
+        .action([](const std::string& value) { return std::stoi(value); });
     program.add_argument("-o", "--output")
-        .help("Output path for calibration intermediate and final data. Stays empty by default, which means no data will be saved on disk.")
+        .help(
+            "Output path for calibration intermediate and final data. Stays empty by default, which means no data will "
+            "be saved on disk.")
         .default_value(std::optional<std::filesystem::path>{})
-        .action([](const std::string &value) {
-            return std::optional{std::filesystem::path(value)};
-            });
+        .action([](const std::string& value) { return std::optional{std::filesystem::path(value)}; });
     program.add_argument("-c", "--checkerboard_dimensions")
         .help("Dimensions of the checkerboard pattern.")
         .default_value(cv::Size{14, 9})
-        .action([](const std::string &value) {
+        .action([](const std::string& value) {
             cv::Size pattern_size;
             std::stringstream ss(value);
             ss >> pattern_size.width;
@@ -59,15 +58,11 @@ int main(int argc, char *argv[]) {
         .help("Use a standard checkerboard instead of the one with radon markers.")
         .default_value(false)
         .implicit_value(true);
-    program.add_argument("-h", "--help")
-        .help("Print this help message.")
-        .default_value(false)
-        .implicit_value(true);
+    program.add_argument("-h", "--help").help("Print this help message.").default_value(false).implicit_value(true);
 
     try {
         program.parse_args(argc, argv);
-    }
-    catch(const std::exception& ex) {
+    } catch (const std::exception& ex) {
         std::cerr << ex.what() << std::endl;
         std::cout << program;
         return 1;
@@ -89,7 +84,7 @@ int main(int argc, char *argv[]) {
     {
         const auto image_dir = program.get<std::filesystem::path>("--path");
         std::vector<std::filesystem::path> image_list;
-        for (const auto &entry : std::filesystem::directory_iterator(image_dir)) {
+        for (const auto& entry : std::filesystem::directory_iterator(image_dir)) {
             if (entry.path().extension() == ".png") {
                 image_list.push_back(entry.path());
             }
@@ -103,7 +98,8 @@ int main(int argc, char *argv[]) {
 
         const auto n_images = program.get<int>("--number_of_images");
         if (n_images > image_list.size()) {
-            std::cerr << "Number of images to use for calibration is greater than the number of images in the folder." << std::endl;
+            std::cerr << "Number of images to use for calibration is greater than the number of images in the folder."
+                      << std::endl;
             return 1;
         }
         if (n_images < 4) {
@@ -130,7 +126,8 @@ int main(int argc, char *argv[]) {
     std::vector<std::vector<cv::Point2f>> corners{};
     {
         constexpr int default_flags = cv::CALIB_CB_ACCURACY | cv::CALIB_CB_EXHAUSTIVE;
-        const int detection_flags = program.get<bool>("--no-radon") ? default_flags : int(cv::CALIB_CB_MARKER | default_flags);
+        const int detection_flags =
+            program.get<bool>("--no-radon") ? default_flags : int(cv::CALIB_CB_MARKER | default_flags);
         std::set<size_t> images_to_remove;
         for (size_t i = 0; i < images.size(); ++i) {
             std::vector<cv::Point2f> corners_per_image;
@@ -144,12 +141,13 @@ int main(int argc, char *argv[]) {
                 cv::Mat image_with_corners;
                 cv::cvtColor(images[i], image_with_corners, cv::COLOR_GRAY2BGR);
                 cv::drawChessboardCorners(image_with_corners, pattern_size, corners_per_image, true);
-                cv::imwrite((*output_dir / ("image_" + std::to_string(i) + "_corners.png")).string(), image_with_corners);
+                cv::imwrite((*output_dir / ("image_" + std::to_string(i) + "_corners.png")).string(),
+                            image_with_corners);
             }
 
             corners.push_back(std::move(corners_per_image));
         }
-        
+
         // cleaning up the image list
         std::vector<cv::Mat> filtered_images;
         for (size_t i = 0; i < images.size(); ++i) {
@@ -162,7 +160,7 @@ int main(int argc, char *argv[]) {
         images = std::move(filtered_images);
     }
 
-    if (images.size() < 4) { // FIXME: condition on the number of point measurements
+    if (images.size() < 4) {  // FIXME: condition on the number of point measurements
         std::cerr << "Not enough data for calibration" << std::endl;
         return 1;
     }
@@ -188,7 +186,8 @@ int main(int argc, char *argv[]) {
         auto camera_matrix = cv::Matx<double, 3, 3>();
         auto dist_coeffs = cv::Vec<double, 5>();
         std::vector<cv::Mat> rvecs, tvecs;
-        const auto rms = cv::calibrateCamera(object_points, corners, images[0].size(), camera_matrix, dist_coeffs, rvecs, tvecs);
+        const auto rms =
+            cv::calibrateCamera(object_points, corners, images[0].size(), camera_matrix, dist_coeffs, rvecs, tvecs);
 
         std::cout << "RMS Reprojection: " << rms << std::endl;
         std::cout << "Camera matrix: " << camera_matrix << std::endl;
@@ -212,7 +211,8 @@ int main(int argc, char *argv[]) {
         auto dist_coeffs = cv::Vec<double, 5>();
         std::vector<cv::Mat> rvecs, tvecs;
         std::vector<cv::Point3f> new_points;
-        const auto rms = cv::calibrateCameraRO(object_points, corners, images[0].size(), fixed_index, camera_matrix, dist_coeffs, rvecs, tvecs, new_points);
+        const auto rms = cv::calibrateCameraRO(object_points, corners, images[0].size(), fixed_index, camera_matrix,
+                                               dist_coeffs, rvecs, tvecs, new_points);
 
         std::cout << "RMS Reprojection: " << rms << std::endl;
         std::cout << "Camera matrix: " << camera_matrix << std::endl;
@@ -234,12 +234,12 @@ int main(int argc, char *argv[]) {
         std::cout << std::endl << "Calibration with ceres-based solver" << std::endl;
 
         std::vector<caliban::Point3D> target_points;
-        for (const auto &op : object_points[0]) {
+        for (const auto& op : object_points[0]) {
             target_points.push_back({op.x, op.y, op.z});
         }
 
-        std::vector<std::map<size_t, caliban::Point2D> > image_points;
-        for (const auto &cp : corners) {
+        std::vector<std::map<size_t, caliban::Point2D>> image_points;
+        for (const auto& cp : corners) {
             std::map<size_t, caliban::Point2D> image_points_per_image;
             for (size_t i = 0; i < cp.size(); ++i) {
                 image_points_per_image[i] = {cp[i].x, cp[i].y};
@@ -248,16 +248,20 @@ int main(int argc, char *argv[]) {
         }
 
         auto camera_matrix = cv::initCameraMatrix2D(object_points, corners, images[0].size(), 1.0);
-        caliban::CameraMatrix camera_matrix_{camera_matrix.at<double>(0, 0), camera_matrix.at<double>(0, 2), camera_matrix.at<double>(1, 1), camera_matrix.at<double>(1, 2)};
+        caliban::CameraMatrix camera_matrix_{camera_matrix.at<double>(0, 0), camera_matrix.at<double>(0, 2),
+                                             camera_matrix.at<double>(1, 1), camera_matrix.at<double>(1, 2)};
         caliban::DistortionCoefficients distortion_coefficients_{0, 0, 0, 0, 0};
         std::vector<caliban::QuatSE3> obj_2_cams;
         for (size_t i = 0; i < images.size(); ++i) {
             cv::Mat rvec, tvec;
-            cv::solvePnP(object_points[i], corners[i], camera_matrix, cv::noArray(), rvec, tvec, false, cv::SOLVEPNP_ITERATIVE);
+            cv::solvePnP(object_points[i], corners[i], camera_matrix, cv::noArray(), rvec, tvec, false,
+                         cv::SOLVEPNP_ITERATIVE);
             auto q = cv::Quat<double>::createFromRvec(rvec);
-            obj_2_cams.push_back({q.w, q.x, q.y, q.z, tvec.at<double>(0, 0), tvec.at<double>(1, 0), tvec.at<double>(2, 0)});
+            obj_2_cams.push_back(
+                {q.w, q.x, q.y, q.z, tvec.at<double>(0, 0), tvec.at<double>(1, 0), tvec.at<double>(2, 0)});
         }
-        const double rms = caliban::calibrate_intrinsics(target_points, image_points, camera_matrix_, distortion_coefficients_, obj_2_cams);
+        const double rms = caliban::calibrate_intrinsics(target_points, image_points, camera_matrix_,
+                                                         distortion_coefficients_, obj_2_cams);
 
         camera_matrix.at<double>(0, 0) = camera_matrix_[0];
         camera_matrix.at<double>(0, 2) = camera_matrix_[1];
@@ -273,7 +277,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Distortion coefficients: " << dist_coeffs << std::endl;
 
         std::vector<cv::Point3f> target_points_cv;
-        for (const auto &tp : target_points) {
+        for (const auto& tp : target_points) {
             target_points_cv.push_back({tp[0], tp[1], tp[2]});
         }
         object_point_statistics(object_points[0], target_points_cv);

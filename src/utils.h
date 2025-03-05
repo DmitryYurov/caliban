@@ -16,8 +16,7 @@ namespace caliban {
  * @param out   The output transformation (array of n_quat_se3 size, quaternion + Cartesian vector representation)
  */
 template <typename T>
-void MultiplySE3(const T* const a, const T* const b, T* out)
-{
+void MultiplySE3(const T* const a, const T* const b, T* out) {
     ceres::QuaternionProduct(a, b, out);
     ceres::QuaternionRotatePoint(a, b + n_quat_so3, out + n_quat_so3);
 
@@ -35,8 +34,7 @@ void MultiplySE3(const T* const a, const T* const b, T* out)
  * @param out   The output transformation (array of n_quat_se3 size, quaternion + Cartesian vector representation)
  */
 template <typename T>
-void InverseSE3(const T* const in, T* out)
-{
+void InverseSE3(const T* const in, T* out) {
     out[0] = -in[0];
     out[1] = in[1];
     out[2] = in[2];
@@ -44,10 +42,10 @@ void InverseSE3(const T* const in, T* out)
 
     ceres::QuaternionRotatePoint(out, in + n_quat_so3, out + n_quat_so3);
 
-    out[n_quat_so3]     = -out[n_quat_so3];
+    out[n_quat_so3] = -out[n_quat_so3];
     out[n_quat_so3 + 1] = -out[n_quat_so3 + 1];
     out[n_quat_so3 + 2] = -out[n_quat_so3 + 2];
 }
-}
+}  // namespace caliban
 
-#endif // CALIBAN_UTILS_H
+#endif  // CALIBAN_UTILS_H

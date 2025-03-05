@@ -6,13 +6,14 @@
 namespace caliban {
 struct ReprojectionError {
     ReprojectionError(const Point2D& point_2d)
-        : point_2d_(point_2d)
-    {
-    }
-    
+        : point_2d_(point_2d) {}
+
     template <typename T>
-    bool operator()(const T* const cam_mat, const T* const distort, const T* const obj_2_cam, const T* const point_3d, T* residuals) const
-    {
+    bool operator()(const T* const cam_mat,
+                    const T* const distort,
+                    const T* const obj_2_cam,
+                    const T* const point_3d,
+                    T* residuals) const {
         T fx = cam_mat[0];
         T cx = cam_mat[1];
         T fy = cam_mat[2];
@@ -56,14 +57,12 @@ struct ReprojectionError {
         return true;
     }
 
-    static auto Create(const Point2D point_2d)
-        -> std::unique_ptr<ceres::CostFunction>
-    {
+    static auto Create(const Point2D point_2d) -> std::unique_ptr<ceres::CostFunction> {
         constexpr auto n_residuals = n_r2;
         using AutoDiffCF = ceres::AutoDiffCostFunction<ReprojectionError, n_residuals, n_cam, n_dist, n_quat_se3, n_r3>;
 
-        auto estimator   = std::make_unique<ReprojectionError>(point_2d);
-        auto result      = std::make_unique<AutoDiffCF>(estimator.get());
+        auto estimator = std::make_unique<ReprojectionError>(point_2d);
+        auto result = std::make_unique<AutoDiffCF>(estimator.get());
         estimator.release();
 
         return result;
@@ -77,11 +76,7 @@ double norm2(const Point3D& point) {
 }
 
 Point3D crossProduct(const Point3D& p1, const Point3D& p2) {
-    return {
-        p1[1] * p2[2] - p1[2] * p2[1],
-        p1[2] * p2[0] - p1[0] * p2[2],
-        p1[0] * p2[1] - p1[1] * p2[0]
-    };
+    return {p1[1] * p2[2] - p1[2] * p2[1], p1[2] * p2[0] - p1[0] * p2[2], p1[0] * p2[1] - p1[1] * p2[0]};
 }
 
 // We assume for this selection, that all points are in the same plane defined by the condition z = 0
@@ -112,20 +107,14 @@ std::map<size_t, std::vector<int>> selectBase(std::vector<Point3D> target_points
     }
     const size_t p1_i = std::distance(target_points.begin(), p1_iter);
 
-    return {
-        { p0_i, {0, 1, 2} },
-        { p1_i, {0, 1, 2} },
-        { p2_i, {2} }
-    };
+    return {{p0_i, {0, 1, 2}}, {p1_i, {0, 1, 2}}, {p2_i, {2}}};
 }
 
-double calibrate_intrinsics(
-    std::vector<Point3D>& target_points,
-    const std::vector<std::map<size_t, Point2D>>& image_points,
-    CameraMatrix& camera_matrix,
-    DistortionCoefficients& distortion_coefficients,
-    std::vector<QuatSE3> obj_2_cams
-) {
+double calibrate_intrinsics(std::vector<Point3D>& target_points,
+                            const std::vector<std::map<size_t, Point2D>>& image_points,
+                            CameraMatrix& camera_matrix,
+                            DistortionCoefficients& distortion_coefficients,
+                            std::vector<QuatSE3> obj_2_cams) {
     // define the manifold for the SE3 transformation
     auto se3 = ceres::ProductManifold{ceres::QuaternionManifold{}, ceres::EuclideanManifold<3>{}};
 
@@ -138,8 +127,8 @@ double calibrate_intrinsics(
 
     ceres::Problem::Options problem_options;
     problem_options.cost_function_ownership = ceres::TAKE_OWNERSHIP;
-    problem_options.manifold_ownership      = ceres::DO_NOT_TAKE_OWNERSHIP;
-    auto problem                            = ceres::Problem(problem_options);
+    problem_options.manifold_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
+    auto problem = ceres::Problem(problem_options);
 
     // adding parameter blocks
     problem.AddParameterBlock(camera_matrix.data(), camera_matrix.size());
@@ -162,22 +151,20 @@ double calibrate_intrinsics(
         const auto& points_per_im = image_points[i_im];
         for (const auto& [tp_index, point_2d] : points_per_im) {
             auto& point_3d = target_points[tp_index];
-            auto cost_function                = ReprojectionError::Create(point_2d);
+            auto cost_function = ReprojectionError::Create(point_2d);
             problem.AddResidualBlock(cost_function.release(),
                                      nullptr,  // loss function (nullptr = default)
-                                     camera_matrix.data(),
-                                     distortion_coefficients.data(),
-                                     obj_2_cams[i_im].data(),
+                                     camera_matrix.data(), distortion_coefficients.data(), obj_2_cams[i_im].data(),
                                      point_3d.data());
         }
     }
 
     // Run the solver
     ceres::Solver::Options options;
-    options.trust_region_strategy_type   = ceres::LEVENBERG_MARQUARDT;
-    options.linear_solver_type           = ceres::SPARSE_NORMAL_CHOLESKY;
+    options.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
+    options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
     options.minimizer_progress_to_stdout = false;
-    options.logging_type                 = ceres::SILENT;
+    options.logging_type = ceres::SILENT;
 
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
@@ -186,12 +173,12 @@ double calibrate_intrinsics(
         throw std::runtime_error("Ceres solver failed, reason: " + summary.message);
     }
 
-    const size_t n_points = std::accumulate(image_points.begin(), image_points.end(), size_t(0), [](size_t acc, const auto& points_2d) {
-        return acc + n_r2 * points_2d.size();
-    });
+    const size_t n_points =
+        std::accumulate(image_points.begin(), image_points.end(), size_t(0),
+                        [](size_t acc, const auto& points_2d) { return acc + n_r2 * points_2d.size(); });
     // 7 is for the 7 dofs fixed by the base points
     const size_t bessel = n_r3 * target_points.size() + n_cam + n_dist + n_se3 * obj_2_cams.size() - 7;
 
-    return std::sqrt(2. * summary.final_cost / (n_points - bessel)); // 2. is due to the way Ceres computes the cost
+    return std::sqrt(2. * summary.final_cost / (n_points - bessel));  // 2. is due to the way Ceres computes the cost
 }
 }  // namespace caliban

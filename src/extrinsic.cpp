@@ -10,22 +10,20 @@
 namespace caliban {
 
 struct ReprojectionError {
-    ReprojectionError(ExtrinsicCalibType calib_type,
-                          QuatSE3 B,      
-                          Point2D point_2d,
-                          Point3D point_3d,
-                          Point3D base)
+    ReprojectionError(ExtrinsicCalibType calib_type, QuatSE3 B, Point2D point_2d, Point3D point_3d, Point3D base)
         : m_calib_type(calib_type)
         , m_B(B)
         , m_point_2d(point_2d)
         , m_point_3d(point_3d)
-        , m_base(base)
-    {
-    }
+        , m_base(base) {}
 
     template <typename T>
-    bool operator()(const T* const X, const T* const cam_mat, const T* const distort, const T* const Z, const T* const scale, T* residuals) const
-    {
+    bool operator()(const T* const X,
+                    const T* const cam_mat,
+                    const T* const distort,
+                    const T* const Z,
+                    const T* const scale,
+                    T* residuals) const {
         // convert B_ to the required type T
         T B[n_quat_se3];
         for (size_t i = 0; i < n_quat_se3; ++i) {
@@ -41,12 +39,11 @@ struct ReprojectionError {
         MultiplySE3(Z, B, ZB);
         if (m_calib_type == ExtrinsicCalibType::EyeInHand) {
             T inv_X[n_quat_se3];
-            InverseSE3(X, inv_X);             
+            InverseSE3(X, inv_X);
             MultiplySE3(ZB, inv_X, obj_2_cam);
-        }
-        else if (m_calib_type == ExtrinsicCalibType::EyeToHand) {
+        } else if (m_calib_type == ExtrinsicCalibType::EyeToHand) {
             T inv_ZB[n_quat_se3];
-            InverseSE3(ZB, inv_ZB);           
+            InverseSE3(ZB, inv_ZB);
             MultiplySE3(X, inv_ZB, obj_2_cam);
         }
 
@@ -82,18 +79,14 @@ struct ReprojectionError {
         return true;
     }
 
-    static auto Create(ExtrinsicCalibType calib_type,
-                       QuatSE3 B,      
-                       Point2D point_2d,
-                       Point3D point_3d,
-                       Point3D base)
-        -> std::unique_ptr<ceres::CostFunction>
-    {
+    static auto Create(ExtrinsicCalibType calib_type, QuatSE3 B, Point2D point_2d, Point3D point_3d, Point3D base)
+        -> std::unique_ptr<ceres::CostFunction> {
         constexpr auto n_residuals = n_r2;
         constexpr size_t n_scale = 1U;
-        using AutoDiffCF = ceres::AutoDiffCostFunction<ReprojectionError, n_residuals, n_quat_se3, n_cam, n_dist, n_quat_se3, n_scale>;
-        auto estimator   = std::make_unique<ReprojectionError>(calib_type, B, point_2d, point_3d, base);
-        auto result      = std::make_unique<AutoDiffCF>(estimator.get());
+        using AutoDiffCF =
+            ceres::AutoDiffCostFunction<ReprojectionError, n_residuals, n_quat_se3, n_cam, n_dist, n_quat_se3, n_scale>;
+        auto estimator = std::make_unique<ReprojectionError>(calib_type, B, point_2d, point_3d, base);
+        auto result = std::make_unique<AutoDiffCF>(estimator.get());
         estimator.release();
 
         return result;
@@ -107,15 +100,14 @@ struct ReprojectionError {
 };
 
 double calibrate_extrinsics(ExtrinsicCalibType type,
-    std::vector<Point3D>& target_points,
-    const std::vector<std::map<size_t, Point2D>>& image_points,
-    const std::vector<QuatSE3>& Bs,
-    QuatSE3& X,
-    QuatSE3& Z,
-    const CameraMatrix& camera_matrix,
-    const DistortionCoefficients& distortion_coefficients,
-    int flags)
-{
+                            std::vector<Point3D>& target_points,
+                            const std::vector<std::map<size_t, Point2D>>& image_points,
+                            const std::vector<QuatSE3>& Bs,
+                            QuatSE3& X,
+                            QuatSE3& Z,
+                            const CameraMatrix& camera_matrix,
+                            const DistortionCoefficients& distortion_coefficients,
+                            int flags) {
     return 0.0;
 }
 }  // namespace caliban

@@ -15,4 +15,4 @@ using QuatSE3 = std::array<double, n_quat_se3>;
 
 }  // namespace caliban
 
-#endif // CALIBAN_TYPES_H
+#endif  // CALIBAN_TYPES_H
