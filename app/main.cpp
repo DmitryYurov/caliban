@@ -1,11 +1,13 @@
-#include <filesystem>
-#include <random>
+#include <caliban/intrinsic.h>
+#include "app_utils.h"
 
 #include <argparse/argparse.hpp>
 #include <opencv2/core/quaternion.hpp>
 #include <opencv2/opencv.hpp>
 
-#include <caliban/intrinsic.h>
+#include <filesystem>
+#include <fstream>
+#include <random>
 
 static void object_point_statistics(const std::vector<cv::Point3f>& lhs, const std::vector<cv::Point3f>& rhs) {
     if (lhs.size() != rhs.size()) {
@@ -203,6 +205,10 @@ int main(int argc, char* argv[]) {
             fs << "camera_matrix" << intrinsic_result.camera_matrix;
             fs << "dist_coeffs" << intrinsic_result.dist_coeffs;
             fs.release();
+
+            // ply file for checherboard visualization
+            auto ply_file = std::ofstream((*output_dir / "checkerboard.ply").string());
+            ply_file << caliban::make_ply(intrinsic_result.target_points, pattern_size);
         }
     }
 
