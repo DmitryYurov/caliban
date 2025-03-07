@@ -4,6 +4,7 @@
 #include "constants.h"
 
 #include <opencv2/core.hpp>
+#include <opencv2/core/quaternion.hpp>
 
 #include <ceres/rotation.h>
 
@@ -49,6 +50,15 @@ void InverseSE3(const T* const in, T* out) {
     out[n_quat_so3 + 2] = -out[n_quat_so3 + 2];
 }
 
+/**
+ * @brief Provides the inverse of the input SE(3) transformation, a wrapper around InverseSE3.
+ */
+inline QuatSE3 invert(const QuatSE3& q) {
+    QuatSE3 result;
+    InverseSE3(q.data(), result.data());
+    return result;
+}
+
 inline std::vector<Point3D> convert(const std::vector<cv::Point3f>& points_cv) {
     std::vector<Point3D> points;
     for (const auto& op : points_cv) {
@@ -82,6 +92,18 @@ inline std::vector<std::map<size_t, Point2D>> convert(const std::vector<std::map
     }
 
     return points;
+}
+
+inline std::tuple<cv::Vec<double, 3>, cv::Vec<double, 3>> convert(const QuatSE3& quat_se3) {
+    cv::Quat<double> q{quat_se3[0], quat_se3[1], quat_se3[2], quat_se3[3]};
+    auto rvec = q.toRotVec();
+    cv::Vec<double, 3> tvec{quat_se3[4], quat_se3[5], quat_se3[6]};
+    return {rvec, tvec};
+}
+
+inline QuatSE3 convert(const cv::Vec<double, 3>& rvec, const cv::Vec<double, 3>& tvec) {
+    auto q = cv::Quat<double>::createFromRvec(rvec);
+    return {q.w, q.x, q.y, q.z, tvec(0), tvec(1), tvec(2)};
 }
 }  // namespace caliban
 

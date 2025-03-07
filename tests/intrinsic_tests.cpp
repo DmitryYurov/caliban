@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <caliban/intrinsic.h>
 #include "test_utils.h"
 
 using namespace test_utils;
@@ -22,8 +23,8 @@ TEST(Intrinsic, planar) {
     EXPECT_NEAR(result.camera_matrix(0, 2), 960.0, 2.0);    // cx
     EXPECT_NEAR(result.camera_matrix(1, 1), 1400.0, 1e-1);  // fy
     EXPECT_NEAR(result.camera_matrix(1, 2), 540.0, 2.0);    // cy
-    EXPECT_NEAR(result.dist_coeffs(0, 0), -1.73e-1, 1e-2);  // k1
-    EXPECT_NEAR(result.dist_coeffs(1, 0), 2.49e-2, 1e-2);   // k2
+    EXPECT_NEAR(result.dist_coeffs(0), -1.73e-1, 1e-2);     // k1
+    EXPECT_NEAR(result.dist_coeffs(1), 2.49e-2, 1e-2);      // k2
 }
 
 TEST(Intrinsic, curved) {
@@ -44,8 +45,8 @@ TEST(Intrinsic, curved) {
     EXPECT_NEAR(result.camera_matrix(0, 2), 960.0, 2.0);    // cx
     EXPECT_NEAR(result.camera_matrix(1, 1), 1400.0, 5e-1);  // fy
     EXPECT_NEAR(result.camera_matrix(1, 2), 540.0, 2.0);    // cy
-    EXPECT_NEAR(result.dist_coeffs(0, 0), -1.73e-1, 1e-2);  // k1
-    EXPECT_NEAR(result.dist_coeffs(1, 0), 2.49e-2, 1e-2);   // k2
+    EXPECT_NEAR(result.dist_coeffs(0), -1.73e-1, 1e-2);     // k1
+    EXPECT_NEAR(result.dist_coeffs(1), 2.49e-2, 1e-2);      // k2
 }
 
 TEST(Intrinsic, real) {
@@ -66,6 +67,6 @@ TEST(Intrinsic, real) {
     EXPECT_NEAR(result.camera_matrix(0, 2), 309.0, 1e-1);    // cx
     EXPECT_NEAR(result.camera_matrix(1, 1), 1083.64, 1e-1);  // fy
     EXPECT_NEAR(result.camera_matrix(1, 2), 235.0, 2e-1);    // cy
-    EXPECT_NEAR(result.dist_coeffs(0, 0), -0.23, 1e-2);      // k1
-    EXPECT_NEAR(result.dist_coeffs(1, 0), 0.21, 1e-2);       // k2
+    EXPECT_NEAR(result.dist_coeffs(0), -0.23, 1e-2);         // k1
+    EXPECT_NEAR(result.dist_coeffs(1), 0.21, 1e-2);          // k2
 }

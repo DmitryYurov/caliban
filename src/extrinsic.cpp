@@ -1,9 +1,10 @@
 #include "caliban/extrinsic.h"
 
-#include "caliban/types.h"
+#include "types.h"
 #include "utils.h"
 
 #include <ceres/ceres.h>
+#include <opencv2/calib3d.hpp>
 
 #include <memory>
 
@@ -99,16 +100,16 @@ struct ReprojectionError {
     const Point3D m_base{};
 };
 
-double calibrate_extrinsics(ExtrinsicCalibType calib_type,
-                            std::vector<Point3D>& target_points,
-                            const std::vector<std::map<size_t, Point2D>>& image_points,
-                            const std::vector<QuatSE3>& Bs,
-                            QuatSE3& X,
-                            QuatSE3& Z,
-                            CameraMatrix& camera_matrix,
-                            DistortionCoefficients& distortion_coefficients,
-                            double scale,
-                            int flags) {
+double calibrate(ExtrinsicCalibType calib_type,
+                 std::vector<Point3D>& target_points,
+                 const std::vector<std::map<size_t, Point2D>>& image_points,
+                 const std::vector<QuatSE3>& Bs,
+                 QuatSE3& X,
+                 QuatSE3& Z,
+                 CameraMatrix& camera_matrix,
+                 DistortionCoefficients& distortion_coefficients,
+                 double scale,
+                 int flags) {
     // define the SE3 manifold
     auto se3 = ceres::ProductManifold{ceres::QuaternionManifold{}, ceres::EuclideanManifold<3>{}};
 
@@ -168,5 +169,82 @@ double calibrate_extrinsics(ExtrinsicCalibType calib_type,
     const size_t bessel = flags & ExtrinsicFlags::OptimizeScale == 0 ? n_se3 * 2 : n_se3 * 2 + 1;
 
     return std::sqrt(2. * summary.final_cost / (n_points - bessel));  // 2. is due to the way Ceres computes the cost
+}
+
+ExtrinsicResult calibrate_extrinsics(ExtrinsicCalibType calib_type,
+                                     const std::vector<cv::Point3f>& target_points_cv,
+                                     const std::vector<std::map<size_t, cv::Point2f>>& image_points_cv,
+                                     const std::vector<cv::Vec<double, 3>>& B_rvecs,
+                                     const std::vector<cv::Vec<double, 3>>& B_tvecs,
+                                     const std::vector<cv::Vec<double, 3>>& tar_2_cam_rvecs,
+                                     const std::vector<cv::Vec<double, 3>>& tar_2_cam_tvecs,
+                                     const cv::Matx<double, 3, 3>& camera_matrix_cv,
+                                     const cv::Vec<double, 5>& distort_coeffs_cv,
+                                     double scale,
+                                     int flags) {
+    // computing the initial guess with opencv built-in functions
+    // depending on the calibration type, A transform is either target-to-camera (eye-in-hand) or camera-to-target
+    // (eye-to-hand)
+    std::vector<cv::Mat> A_rvecs;
+    std::vector<cv::Mat> A_tvecs;
+    {
+        std::vector<QuatSE3> As;
+        for (size_t i = 0; i < tar_2_cam_rvecs.size(); ++i) {
+            As.push_back(convert(tar_2_cam_rvecs[i], tar_2_cam_tvecs[i]));
+        }
+        if (calib_type == ExtrinsicCalibType::EyeToHand) {
+            std::transform(As.begin(), As.end(), As.begin(), [](const auto& A) { return invert(A); });
+        }
+
+        for (const auto& A : As) {
+            const auto& [rvec, tvec] = convert(A);
+            A_rvecs.push_back(cv::Mat(rvec));
+            A_tvecs.push_back(cv::Mat(tvec));
+        }
+    }
+
+    QuatSE3 X{};
+    QuatSE3 Z{};
+    {
+        std::vector<cv::Mat> B_rvecs_mat;
+        std::vector<cv::Mat> B_tvecs_mat;
+        for (size_t i = 0; i < B_rvecs.size(); ++i) {
+            B_rvecs_mat.push_back(cv::Mat(B_rvecs[i]));
+            B_tvecs_mat.push_back(cv::Mat(B_tvecs[i]));
+        }
+
+        cv::Mat_<double> X_rvec_mat;
+        cv::Mat_<double> X_tvec_mat;
+        cv::Mat_<double> Z_rvec_mat;
+        cv::Mat_<double> Z_tvec_mat;
+        cv::calibrateRobotWorldHandEye(A_rvecs, A_tvecs, B_rvecs_mat, B_tvecs_mat, X_rvec_mat, X_tvec_mat, Z_rvec_mat,
+                                       Z_tvec_mat);
+
+        const auto X_rvec = cv::Vec<double, 3>{X_rvec_mat(0), X_rvec_mat(1), X_rvec_mat(2)};
+        const auto X_tvec = cv::Vec<double, 3>{X_tvec_mat(0), X_tvec_mat(1), X_tvec_mat(2)};
+        const auto Z_rvec = cv::Vec<double, 3>{Z_rvec_mat(0), Z_rvec_mat(1), Z_rvec_mat(2)};
+        const auto Z_tvec = cv::Vec<double, 3>{Z_tvec_mat(0), Z_tvec_mat(1), Z_tvec_mat(2)};
+        X = convert(X_rvec, X_tvec);
+        Z = convert(Z_rvec, Z_tvec);
+    }
+
+    std::vector<QuatSE3> Bs;
+    for (size_t i = 0; i < B_rvecs.size(); ++i) {
+        Bs.push_back(convert(B_rvecs[i], B_tvecs[i]));
+    }
+
+    // now perform the refinement
+    auto target_points = convert(target_points_cv);
+    auto image_points = convert(image_points_cv);
+    CameraMatrix camera_matrix{camera_matrix_cv(0, 0), camera_matrix_cv(0, 2), camera_matrix_cv(1, 1),
+                               camera_matrix_cv(1, 2)};
+    DistortionCoefficients distortion_coefficients{distort_coeffs_cv[0], distort_coeffs_cv[1], distort_coeffs_cv[2],
+                                                   distort_coeffs_cv[3], distort_coeffs_cv[4]};
+
+    ExtrinsicResult result;
+    result.rms_repro = calibrate(calib_type, target_points, image_points, Bs, X, Z, camera_matrix,
+                                 distortion_coefficients, scale, flags);
+
+    return result;
 }
 }  // namespace caliban

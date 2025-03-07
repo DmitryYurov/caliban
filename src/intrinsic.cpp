@@ -222,9 +222,7 @@ IntrinsicsResult calibrate_intrinsics(const std::vector<cv::Point3f>& target_poi
             cv::Mat rvec, tvec;
             cv::solvePnP(target_points_cv_vec[i], image_points_cv_vec[i], camera_matrix_cv, cv::noArray(), rvec, tvec,
                          false, cv::SOLVEPNP_ITERATIVE);
-            auto q = cv::Quat<double>::createFromRvec(rvec);
-            obj_2_cams.push_back(
-                {q.w, q.x, q.y, q.z, tvec.at<double>(0, 0), tvec.at<double>(1, 0), tvec.at<double>(2, 0)});
+            obj_2_cams.push_back(convert(rvec, tvec));
         }
     }
 
@@ -237,6 +235,12 @@ IntrinsicsResult calibrate_intrinsics(const std::vector<cv::Point3f>& target_poi
     result.camera_matrix << camera_matrix[0], 0, camera_matrix[1], 0, camera_matrix[2], camera_matrix[3], 0, 0, 1;
     result.dist_coeffs << dist_coeffs[0], dist_coeffs[1], dist_coeffs[2], dist_coeffs[3], dist_coeffs[4];
     result.target_points = convert(target_points);
+
+    for (const auto& obj_2_cam : obj_2_cams) {
+        auto [rvec, tvec] = convert(obj_2_cam);
+        result.rvecs.push_back(rvec);
+        result.tvecs.push_back(tvec);
+    }
 
     return result;
 }
