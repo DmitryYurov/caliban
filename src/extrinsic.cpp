@@ -220,9 +220,9 @@ ExtrinsicResult calibrate_extrinsics(ExtrinsicCalibType calib_type,
         cv::calibrateRobotWorldHandEye(A_rvecs, A_tvecs, B_rvecs_mat, B_tvecs_mat, X_rvec_mat, X_tvec_mat, Z_rvec_mat,
                                        Z_tvec_mat);
 
-        const auto X_rvec = cv::Vec<double, 3>{X_rvec_mat(0), X_rvec_mat(1), X_rvec_mat(2)};
+        const auto X_rvec = cv::Quat<double>::createFromRotMat(X_rvec_mat).toRotVec();
         const auto X_tvec = cv::Vec<double, 3>{X_tvec_mat(0), X_tvec_mat(1), X_tvec_mat(2)};
-        const auto Z_rvec = cv::Vec<double, 3>{Z_rvec_mat(0), Z_rvec_mat(1), Z_rvec_mat(2)};
+        const auto Z_rvec = cv::Quat<double>::createFromRotMat(Z_rvec_mat).toRotVec();
         const auto Z_tvec = cv::Vec<double, 3>{Z_tvec_mat(0), Z_tvec_mat(1), Z_tvec_mat(2)};
         X = convert(X_rvec, X_tvec);
         Z = convert(Z_rvec, Z_tvec);

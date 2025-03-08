@@ -16,6 +16,9 @@ inline auto collect_images(std::filesystem::path subpath) -> std::vector<cv::Mat
         }
     }
 
+    // ensure lexycographical ordering
+    std::sort(path_list.begin(), path_list.end(), [](const auto& a, const auto& b) { return a.string() < b.string(); });
+
     std::vector<cv::Mat> images;
     images.reserve(path_list.size());
     for (const auto& path : path_list) {

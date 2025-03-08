@@ -121,7 +121,7 @@ double calibrate(std::vector<Point3D>& target_points,
                  const std::vector<std::map<size_t, Point2D>>& image_points,
                  CameraMatrix& camera_matrix,
                  DistortionCoefficients& distortion_coefficients,
-                 std::vector<QuatSE3> obj_2_cams) {
+                 std::vector<QuatSE3>& obj_2_cams) {
     // define the manifold for the SE3 transformation
     auto se3 = ceres::ProductManifold{ceres::QuaternionManifold{}, ceres::EuclideanManifold<3>{}};
 
