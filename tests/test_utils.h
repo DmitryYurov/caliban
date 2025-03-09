@@ -29,11 +29,11 @@ inline auto collect_images(std::filesystem::path subpath) -> std::vector<cv::Mat
 }
 
 inline auto collect_transforms(std::filesystem::path subpath)
-    -> std::tuple<std::vector<cv::Vec<double, 3>>, std::vector<cv::Vec<double, 3>>> {
+    -> std::tuple<std::vector<cv::Quat<double>>, std::vector<cv::Vec<double, 3>>> {
     auto full_path = std::filesystem::path(TEST_DATA_PATH) / subpath;
     std::ifstream file{full_path.string()};
 
-    std::vector<cv::Vec<double, 3>> rvecs;
+    std::vector<cv::Quat<double>> rquats;
     std::vector<cv::Vec<double, 3>> tvecs;
 
     std::string line;
@@ -49,17 +49,17 @@ inline auto collect_transforms(std::filesystem::path subpath)
             iss >> transform(i, 0) >> transform(i, 1) >> transform(i, 2) >> transform(i, 3);
         }
 
-        auto rvec = cv::Quat<double>::createFromRotMat(transform.get_minor<3, 3>(0, 0)).toRotVec();
+        auto rquat = cv::Quat<double>::createFromRotMat(transform.get_minor<3, 3>(0, 0));
         auto tvec = cv::Vec<double, 3>{transform(0, 3), transform(1, 3), transform(2, 3)};
 
-        rvecs.push_back(rvec);
+        rquats.push_back(rquat);
         tvecs.push_back(tvec);
 
         std::getline(file, line);
         ++n_read;
     }
 
-    return std::make_tuple(rvecs, tvecs);
+    return std::make_tuple(rquats, tvecs);
 }
 
 inline std::vector<std::map<size_t, cv::Point2f>> detect(std::vector<cv::Mat> images,

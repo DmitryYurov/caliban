@@ -108,7 +108,7 @@ double calibrate(ExtrinsicCalibType calib_type,
                  QuatSE3& Z,
                  CameraMatrix& camera_matrix,
                  DistortionCoefficients& distortion_coefficients,
-                 double scale,
+                 double& scale,
                  int flags) {
     // define the SE3 manifold
     auto se3 = ceres::ProductManifold{ceres::QuaternionManifold{}, ceres::EuclideanManifold<3>{}};
@@ -174,9 +174,9 @@ double calibrate(ExtrinsicCalibType calib_type,
 ExtrinsicResult calibrate_extrinsics(ExtrinsicCalibType calib_type,
                                      const std::vector<cv::Point3f>& target_points_cv,
                                      const std::vector<std::map<size_t, cv::Point2f>>& image_points_cv,
-                                     const std::vector<cv::Vec<double, 3>>& B_rvecs,
+                                     const std::vector<cv::Quat<double>>& B_rquats,
                                      const std::vector<cv::Vec<double, 3>>& B_tvecs,
-                                     const std::vector<cv::Vec<double, 3>>& tar_2_cam_rvecs,
+                                     const std::vector<cv::Quat<double>>& tar_2_cam_rquats,
                                      const std::vector<cv::Vec<double, 3>>& tar_2_cam_tvecs,
                                      const cv::Matx<double, 3, 3>& camera_matrix_cv,
                                      const cv::Vec<double, 5>& distort_coeffs_cv,
@@ -185,52 +185,67 @@ ExtrinsicResult calibrate_extrinsics(ExtrinsicCalibType calib_type,
     // computing the initial guess with opencv built-in functions
     // depending on the calibration type, A transform is either target-to-camera (eye-in-hand) or camera-to-target
     // (eye-to-hand)
-    std::vector<cv::Mat> A_rvecs;
+    std::vector<cv::Mat> A_rots;
     std::vector<cv::Mat> A_tvecs;
     {
         std::vector<QuatSE3> As;
-        for (size_t i = 0; i < tar_2_cam_rvecs.size(); ++i) {
-            As.push_back(convert(tar_2_cam_rvecs[i], tar_2_cam_tvecs[i]));
+        for (size_t i = 0; i < tar_2_cam_rquats.size(); ++i) {
+            As.push_back(convert(tar_2_cam_rquats[i], tar_2_cam_tvecs[i]));
         }
         if (calib_type == ExtrinsicCalibType::EyeToHand) {
             std::transform(As.begin(), As.end(), As.begin(), [](const auto& A) { return invert(A); });
         }
 
         for (const auto& A : As) {
-            const auto& [rvec, tvec] = convert(A);
-            A_rvecs.push_back(cv::Mat(rvec));
-            A_tvecs.push_back(cv::Mat(tvec));
+            const auto& [rquat, tvec] = convert(A);
+            A_rots.push_back(cv::Mat(rquat.toRotMat3x3(), true));  // true = copy data
+            A_tvecs.push_back(cv::Mat(tvec, true));                // true = copy data
         }
     }
 
     QuatSE3 X{};
     QuatSE3 Z{};
     {
-        std::vector<cv::Mat> B_rvecs_mat;
-        std::vector<cv::Mat> B_tvecs_mat;
-        for (size_t i = 0; i < B_rvecs.size(); ++i) {
-            B_rvecs_mat.push_back(cv::Mat(B_rvecs[i]));
-            B_tvecs_mat.push_back(cv::Mat(B_tvecs[i]));
+        std::vector<cv::Mat> B_rot_mats;
+        std::vector<cv::Mat> B_tvec_mats;
+        for (size_t i = 0; i < B_rquats.size(); ++i) {
+            B_rot_mats.push_back(cv::Mat(B_rquats[i].toRotMat3x3(), true));
+            B_tvec_mats.push_back(cv::Mat(B_tvecs[i], true));
         }
 
         cv::Mat_<double> X_rvec_mat;
         cv::Mat_<double> X_tvec_mat;
         cv::Mat_<double> Z_rvec_mat;
         cv::Mat_<double> Z_tvec_mat;
-        cv::calibrateRobotWorldHandEye(A_rvecs, A_tvecs, B_rvecs_mat, B_tvecs_mat, X_rvec_mat, X_tvec_mat, Z_rvec_mat,
+        cv::calibrateRobotWorldHandEye(A_rots, A_tvecs, B_rot_mats, B_tvec_mats, X_rvec_mat, X_tvec_mat, Z_rvec_mat,
                                        Z_tvec_mat);
 
-        const auto X_rvec = cv::Quat<double>::createFromRotMat(X_rvec_mat).toRotVec();
+        std::cout << "X_rvec_mat: " << X_rvec_mat << std::endl;
+        std::cout << "X_tvec_mat: " << X_tvec_mat << std::endl;
+        std::cout << "Z_rvec_mat: " << Z_rvec_mat << std::endl;
+        std::cout << "Z_tvec_mat: " << Z_tvec_mat << std::endl;
+
+        const auto X_rot = cv::Quat<double>::createFromRotMat(X_rvec_mat);
         const auto X_tvec = cv::Vec<double, 3>{X_tvec_mat(0), X_tvec_mat(1), X_tvec_mat(2)};
-        const auto Z_rvec = cv::Quat<double>::createFromRotMat(Z_rvec_mat).toRotVec();
+        const auto Z_rot = cv::Quat<double>::createFromRotMat(Z_rvec_mat);
         const auto Z_tvec = cv::Vec<double, 3>{Z_tvec_mat(0), Z_tvec_mat(1), Z_tvec_mat(2)};
-        X = convert(X_rvec, X_tvec);
-        Z = convert(Z_rvec, Z_tvec);
+
+        std::cout << "X_rvec: " << X_rot << std::endl;
+        std::cout << "X_tvec: " << X_tvec << std::endl;
+        std::cout << "Z_rvec: " << Z_rot << std::endl;
+        std::cout << "Z_tvec: " << Z_tvec << std::endl;
+
+        X = convert(X_rot, X_tvec);
+        Z = convert(Z_rot, Z_tvec);
+        std::cout << "X: " << X[0] << " " << X[1] << " " << X[2] << " " << X[3] << " " << X[4] << " " << X[5] << " "
+                  << X[6] << std::endl;
+        std::cout << "Z: " << Z[0] << " " << Z[1] << " " << Z[2] << " " << Z[3] << " " << Z[4] << " " << Z[5] << " "
+                  << Z[6] << std::endl;
     }
 
     std::vector<QuatSE3> Bs;
-    for (size_t i = 0; i < B_rvecs.size(); ++i) {
-        Bs.push_back(convert(B_rvecs[i], B_tvecs[i]));
+    for (size_t i = 0; i < B_rquats.size(); ++i) {
+        Bs.push_back(convert(B_rquats[i], B_tvecs[i]));
     }
 
     // now perform the refinement
@@ -241,9 +256,12 @@ ExtrinsicResult calibrate_extrinsics(ExtrinsicCalibType calib_type,
     DistortionCoefficients distortion_coefficients{distort_coeffs_cv[0], distort_coeffs_cv[1], distort_coeffs_cv[2],
                                                    distort_coeffs_cv[3], distort_coeffs_cv[4]};
 
-    ExtrinsicResult result;
+    ExtrinsicResult result{calib_type};
     result.rms_repro = calibrate(calib_type, target_points, image_points, Bs, X, Z, camera_matrix,
                                  distortion_coefficients, scale, flags);
+    result.scale = scale;
+    std::tie(result.X_rot, result.X_tvec) = convert(X);
+    std::tie(result.Z_rot, result.Z_tvec) = convert(Z);
 
     return result;
 }

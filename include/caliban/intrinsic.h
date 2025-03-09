@@ -2,6 +2,7 @@
 #define CALIBAN_INTRINSIC_H
 
 #include <opencv2/core.hpp>
+#include <opencv2/core/quaternion.hpp>
 
 #include <array>
 #include <map>
@@ -13,12 +14,12 @@ namespace caliban {
  * @brief The result of the intrinsic calibration
  */
 struct IntrinsicsResult {
-    double rms_repro;                        ///< The root mean square reprojection error
-    cv::Matx<double, 3, 3> camera_matrix;    ///< The camera matrix (3 x 3)
-    cv::Vec<double, 5> dist_coeffs;          ///< The distortion coefficients (5 coefficients: k1, k2, p1, p2, k3)
-    std::vector<cv::Point3f> target_points;  ///< The updated target points
-    std::vector<cv::Vec<double, 3>> rvecs;   ///< The rotation vectors (one per image)
-    std::vector<cv::Vec<double, 3>> tvecs;   ///< The translation vectors (one per image)
+    double rms_repro;                              ///< The root mean square reprojection error
+    cv::Matx<double, 3, 3> camera_matrix;          ///< The camera matrix (3 x 3)
+    cv::Vec<double, 5> dist_coeffs;                ///< The distortion coefficients (5 coefficients: k1, k2, p1, p2, k3)
+    std::vector<cv::Point3f> target_points;        ///< The updated target points
+    std::vector<cv::Quat<double>> rotations;       ///< The rotation quaternions (one per image)
+    std::vector<cv::Vec<double, 3>> translations;  ///< The translation vectors (one per image)
 };
 
 /**

@@ -2,6 +2,7 @@
 #define CALIBAN_EXTRINSIC_H
 
 #include <opencv2/core.hpp>
+#include <opencv2/core/quaternion.hpp>
 
 #include <map>
 #include <vector>
@@ -26,12 +27,10 @@ struct ExtrinsicResult {
     ExtrinsicCalibType calib_type;  ///< The type of the extrinsic calibration (just for user convenience)
     double rms_repro;               ///< The root mean square reprojection error
     double scale;                   ///< The scale of the target points
-    cv::Vec<double, 3> X_rvec;      ///< Rotational part of X transformation
+    cv::Quat<double> X_rot;         ///< Rotational part of X transformation
     cv::Vec<double, 3> X_tvec;      ///< Translational part of X transformation
-    cv::Vec<double, 3> Z_rvec;      ///< Rotational part of Z transformation
+    cv::Quat<double> Z_rot;         ///< Rotational part of Z transformation
     cv::Vec<double, 3> Z_tvec;      ///< Translational part of Z transformation
-    cv::Vec<double, 3> A_rvec;      ///< Rotational part of corrected A transformation
-    cv::Vec<double, 3> A_tvec;      ///< Translational part of corrected A transformation
 };
 
 /**
@@ -59,9 +58,9 @@ struct ExtrinsicResult {
 ExtrinsicResult calibrate_extrinsics(ExtrinsicCalibType calib_type,
                                      const std::vector<cv::Point3f>& target_points_cv,
                                      const std::vector<std::map<size_t, cv::Point2f>>& image_points_cv,
-                                     const std::vector<cv::Vec<double, 3>>& B_rvecs,
+                                     const std::vector<cv::Quat<double>>& B_rquats,
                                      const std::vector<cv::Vec<double, 3>>& B_tvecs,
-                                     const std::vector<cv::Vec<double, 3>>& tar_2_cam_rvecs,
+                                     const std::vector<cv::Quat<double>>& tar_2_cam_rquats,
                                      const std::vector<cv::Vec<double, 3>>& tar_2_cam_tvecs,
                                      const cv::Matx<double, 3, 3>& camera_matrix_cv,
                                      const cv::Vec<double, 5>& distort_coeffs_cv,

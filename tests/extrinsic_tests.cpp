@@ -6,7 +6,7 @@
 
 using namespace test_utils;
 
-TEST(Intrinsic, real) {
+TEST(Extrinsic, real) {
     auto images = collect_images("1");
     ASSERT_TRUE(images.size() > 0);
 
@@ -23,8 +23,14 @@ TEST(Intrinsic, real) {
 
     const auto intrinsics = caliban::calibrate_intrinsics(object_points, corners, images[0].size());
     const auto extrinsics = caliban::calibrate_extrinsics(
-        caliban::ExtrinsicCalibType::EyeInHand, intrinsics.target_points, corners, B_rvecs, B_tvecs, intrinsics.rvecs,
-        intrinsics.tvecs, intrinsics.camera_matrix, intrinsics.dist_coeffs);
+        caliban::ExtrinsicCalibType::EyeInHand, intrinsics.target_points, corners, B_rvecs, B_tvecs,
+        intrinsics.rotations, intrinsics.translations, intrinsics.camera_matrix, intrinsics.dist_coeffs, 1.0,
+        caliban::ExtrinsicFlags::OptimizeScale);
 
     EXPECT_LT(extrinsics.rms_repro, 1e-1);
+    std::cout << "X_rot: " << extrinsics.X_rot << std::endl;
+    std::cout << "X_tvec: " << extrinsics.X_tvec << std::endl;
+    std::cout << "Z_rot: " << extrinsics.Z_rot << std::endl;
+    std::cout << "Z_tvec: " << extrinsics.Z_tvec << std::endl;
+    std::cout << "scale: " << extrinsics.scale << std::endl;
 }

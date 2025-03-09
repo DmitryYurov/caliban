@@ -53,7 +53,7 @@ TEST(Intrinsic, real) {
     auto images = collect_images("1");
     ASSERT_TRUE(images.size() > 0);
 
-    const auto pattern_size = cv::Size(6, 8);
+    const auto pattern_size = cv::Size(8, 6);
     const auto corners = detect(images, pattern_size, false);
     ASSERT_EQ(corners.size(), images.size());
 

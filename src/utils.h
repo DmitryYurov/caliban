@@ -94,16 +94,15 @@ inline std::vector<std::map<size_t, Point2D>> convert(const std::vector<std::map
     return points;
 }
 
-inline std::tuple<cv::Vec<double, 3>, cv::Vec<double, 3>> convert(const QuatSE3& quat_se3) {
-    cv::Quat<double> q{quat_se3[0], quat_se3[1], quat_se3[2], quat_se3[3]};
-    auto rvec = q.toRotVec();
+inline std::tuple<cv::Quat<double>, cv::Vec<double, 3>> convert(const QuatSE3& quat_se3) {
+    const auto q = cv::Quat<double>{quat_se3[0], quat_se3[1], quat_se3[2], quat_se3[3]}.normalize();
     cv::Vec<double, 3> tvec{quat_se3[4], quat_se3[5], quat_se3[6]};
-    return {rvec, tvec};
+    return {q, tvec};
 }
 
-inline QuatSE3 convert(const cv::Vec<double, 3>& rvec, const cv::Vec<double, 3>& tvec) {
-    auto q = cv::Quat<double>::createFromRvec(rvec);
-    return {q.w, q.x, q.y, q.z, tvec(0), tvec(1), tvec(2)};
+inline QuatSE3 convert(const cv::Quat<double>& rotation, const cv::Vec<double, 3>& translation) {
+    const auto q = rotation.normalize();
+    return {q.w, q.x, q.y, q.z, translation(0), translation(1), translation(2)};
 }
 }  // namespace caliban
 
