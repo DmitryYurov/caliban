@@ -169,9 +169,9 @@ double calibrate(std::vector<Point3D>& target_points,
     // Run the solver
     ceres::Solver::Options options;
     options.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
-    options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
-    options.minimizer_progress_to_stdout = false;
-    options.logging_type = ceres::SILENT;
+    options.linear_solver_type = ceres::CGNR;
+    options.preconditioner_type = ceres::JACOBI;
+    options.max_num_iterations = 100;
 
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
@@ -231,6 +231,7 @@ IntrinsicsResult calibrate_intrinsics(const std::vector<cv::Point3f>& target_poi
     auto image_points = convert(image_points_cv);
 
     IntrinsicsResult result;
+
     result.rms_repro = calibrate(target_points, image_points, camera_matrix, dist_coeffs, obj_2_cams);
     result.camera_matrix << camera_matrix[0], 0, camera_matrix[1], 0, camera_matrix[2], camera_matrix[3], 0, 0, 1;
     result.dist_coeffs << dist_coeffs[0], dist_coeffs[1], dist_coeffs[2], dist_coeffs[3], dist_coeffs[4];

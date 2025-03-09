@@ -151,9 +151,9 @@ double calibrate(ExtrinsicCalibType calib_type,
     // Run the solver
     ceres::Solver::Options options;
     options.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
-    options.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY;
-    options.minimizer_progress_to_stdout = false;
-    options.logging_type = ceres::SILENT;
+    options.linear_solver_type = ceres::CGNR;
+    options.preconditioner_type = ceres::JACOBI;
+    options.max_num_iterations = 100;
 
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
@@ -220,27 +220,13 @@ ExtrinsicResult calibrate_extrinsics(ExtrinsicCalibType calib_type,
         cv::calibrateRobotWorldHandEye(A_rots, A_tvecs, B_rot_mats, B_tvec_mats, X_rvec_mat, X_tvec_mat, Z_rvec_mat,
                                        Z_tvec_mat);
 
-        std::cout << "X_rvec_mat: " << X_rvec_mat << std::endl;
-        std::cout << "X_tvec_mat: " << X_tvec_mat << std::endl;
-        std::cout << "Z_rvec_mat: " << Z_rvec_mat << std::endl;
-        std::cout << "Z_tvec_mat: " << Z_tvec_mat << std::endl;
-
         const auto X_rot = cv::Quat<double>::createFromRotMat(X_rvec_mat);
         const auto X_tvec = cv::Vec<double, 3>{X_tvec_mat(0), X_tvec_mat(1), X_tvec_mat(2)};
         const auto Z_rot = cv::Quat<double>::createFromRotMat(Z_rvec_mat);
         const auto Z_tvec = cv::Vec<double, 3>{Z_tvec_mat(0), Z_tvec_mat(1), Z_tvec_mat(2)};
 
-        std::cout << "X_rvec: " << X_rot << std::endl;
-        std::cout << "X_tvec: " << X_tvec << std::endl;
-        std::cout << "Z_rvec: " << Z_rot << std::endl;
-        std::cout << "Z_tvec: " << Z_tvec << std::endl;
-
         X = convert(X_rot, X_tvec);
         Z = convert(Z_rot, Z_tvec);
-        std::cout << "X: " << X[0] << " " << X[1] << " " << X[2] << " " << X[3] << " " << X[4] << " " << X[5] << " "
-                  << X[6] << std::endl;
-        std::cout << "Z: " << Z[0] << " " << Z[1] << " " << Z[2] << " " << Z[3] << " " << Z[4] << " " << Z[5] << " "
-                  << Z[6] << std::endl;
     }
 
     std::vector<QuatSE3> Bs;

@@ -27,10 +27,9 @@ TEST(Extrinsic, real) {
         intrinsics.rotations, intrinsics.translations, intrinsics.camera_matrix, intrinsics.dist_coeffs, 1.0,
         caliban::ExtrinsicFlags::OptimizeScale);
 
-    EXPECT_LT(extrinsics.rms_repro, 1e-1);
-    std::cout << "X_rot: " << extrinsics.X_rot << std::endl;
-    std::cout << "X_tvec: " << extrinsics.X_tvec << std::endl;
-    std::cout << "Z_rot: " << extrinsics.Z_rot << std::endl;
-    std::cout << "Z_tvec: " << extrinsics.Z_tvec << std::endl;
-    std::cout << "scale: " << extrinsics.scale << std::endl;
+    EXPECT_NEAR(extrinsics.rms_repro, 1.4, 0.05);
+    EXPECT_NEAR(extrinsics.scale, 1.0, 1e-2);
+    EXPECT_NEAR(extrinsics.Z_tvec[0], 7.8, 1e-1);
+    EXPECT_NEAR(extrinsics.Z_tvec[1], 4.4, 1e-1);
+    EXPECT_NEAR(extrinsics.Z_tvec[2], 15.7, 1e-1);
 }

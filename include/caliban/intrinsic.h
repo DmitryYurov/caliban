@@ -10,6 +10,11 @@
 
 namespace caliban {
 
+enum class IntrinsicFlags {
+    None = 0,
+    OptimizeTargetShape = 1,
+};
+
 /**
  * @brief The result of the intrinsic calibration
  */
