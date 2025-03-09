@@ -178,6 +178,36 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    // step 4.0: calibrate with opencv
+    {
+        std::cout << std::endl << "Calibration with cv::calibrateCameraRO" << std::endl;
+
+        std::vector<std::vector<cv::Point3f>> object_points(images.size(), target_points);
+
+        const int fixed_index = pattern_size.width * (pattern_size.height - 1);
+        auto camera_matrix = cv::Matx<double, 3, 3>();
+        auto dist_coeffs = cv::Vec<double, 5>();
+        std::vector<cv::Mat> rvecs, tvecs;
+        std::vector<cv::Point3f> new_points;
+
+        const auto rms = cv::calibrateCameraRO(object_points, corners, images[0].size(), fixed_index, camera_matrix,
+                                               dist_coeffs, rvecs, tvecs, new_points);
+
+        std::cout << "RMS Reprojection: " << rms << std::endl;
+        std::cout << "Camera matrix: " << camera_matrix << std::endl;
+        std::cout << "Distortion coefficients: " << dist_coeffs << std::endl;
+
+        object_point_statistics(object_points[0], new_points);
+
+        if (output_dir.has_value()) {
+            cv::FileStorage fs((*output_dir / "calibration_data_opencv_ro.yml").string(), cv::FileStorage::WRITE);
+            fs << "rms" << rms;
+            fs << "camera_matrix" << camera_matrix;
+            fs << "dist_coeffs" << dist_coeffs;
+            fs.release();
+        }
+    }
+
     // step 4: calibrate the camera with ceres-based solver
     {
         std::cout << std::endl << "Calibration with ceres-based solver" << std::endl;
