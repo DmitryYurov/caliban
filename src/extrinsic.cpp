@@ -151,7 +151,7 @@ double calibrate(ExtrinsicCalibType calib_type,
     // Run the solver
     ceres::Solver::Options options;
     options.trust_region_strategy_type = ceres::LEVENBERG_MARQUARDT;
-    options.linear_solver_type = ceres::CGNR;
+    options.linear_solver_type = ceres::DENSE_QR;
     options.preconditioner_type = ceres::JACOBI;
     options.max_num_iterations = 100;
 
