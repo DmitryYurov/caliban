@@ -65,7 +65,13 @@ K = np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]], dtype=np.float64)
 bproc.camera.set_intrinsics_from_K_matrix(K, image_width, image_height)
 mapping_coords = bproc.camera.set_lens_distortion(k1, k2, k3, p1, p2)
 
-cams = []
+# this is the transformation from the camera to the flange - the transform we want to know
+# as a result of the hand-eye calibration
+cam2flange = np.eye(4)
+cam2flange[0, 3] = 0.1
+cam2flange[1, 3] = -0.2
+
+flange_poses = []
 
 zero2marker = np.eye(4)
 zero2marker[2, 3] = -z_dist_marker
@@ -93,8 +99,9 @@ for _ in range(args.num_poses):
     cam2zero = cam2zero @ bproc.math.build_transformation_mat(add_on_location, np.eye(3))
 
     world2cam = np.linalg.inv(cam2zero) @ world2zero
+    world2flange = cam2flange @ world2cam
 
-    cams.append(world2cam)
+    flange_poses.append(world2flange)
     bproc.camera.add_camera_pose(cam2zero)
 
 light = bproc.types.Light()
@@ -114,14 +121,25 @@ np.savetxt(os.path.join(args.output_dir, "K.txt"), K)
 np.savetxt(os.path.join(args.output_dir, "dist_coeff.txt"), np.array([k1, k2, p1, p2, k3]))
 np.savetxt(os.path.join(args.output_dir, "curvature.txt"), np.array([args.curvature, max_displacement]))
 
+# the additional transformation is needed to convert from blender to opencv coordinate system
+bl_to_cv = np.array([[1., 0, 0, 0, ], [0, -1., 0, 0], [0, 0, -1., 0], [0, 0, 0, 1.]])
+np.savetxt(os.path.join(args.output_dir, "flange2cam.txt"), bl_to_cv @ np.linalg.inv(cam2flange))
+
 for key in ['colors']:
     use_interpolation = key == "colors"
     data[key] = bproc.postprocessing.apply_lens_distortion(data[key], mapping_coords, image_width, image_height,
                                                            use_interpolation=use_interpolation)
-
-# the additional transformation is needed to convert from blender to opencv coordinate system
-bl_to_cv = np.array([[1., 0, 0, 0, ], [0, -1., 0, 0], [0, 0, -1., 0], [0, 0, 0, 1.]])
+    
 for i, img in enumerate(data["colors"]):
-    save_cam = np.linalg.inv(bl_to_cv) @ cams[i] @ bl_to_cv
-    # np.savetxt(os.path.join(output_dir, f"cam_pose_{i}.txt"), save_cam)
     cv2.imwrite(os.path.join(output_dir, f"image_{i:03d}.png"), img)
+
+# saving the robot poses
+with open(os.path.join(args.output_dir, "robot_cali.txt"), 'w') as ou_f:
+    ou_f.write(str(len(flange_poses)) + '\n')
+    for flange_pose in flange_poses:
+        flange_pose[:3, 3] = flange_pose[:3, 3] * 1000  # convert m --> mm
+        ou_f.write(' '.join([str(x) for x in flange_pose[0, :]]) + '\n')
+        ou_f.write(' '.join([str(x) for x in flange_pose[1, :]]) + '\n')
+        ou_f.write(' '.join([str(x) for x in flange_pose[2, :]]) + '\n')
+        ou_f.write(' '.join([str(x) for x in flange_pose[3, :]]) + '\n')
+        ou_f.write('\n')
