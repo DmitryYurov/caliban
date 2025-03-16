@@ -19,7 +19,7 @@ enum ExtrinsicFlags {
 /**
  * @brief The result of the extrinsic calibration
  *
- * Notation corresponds to the equation AX = BZ solved during the optimization. X denotes the base-to-target
+ * Notation corresponds to the equation AX = ZB solved during the optimization. X denotes the base-to-target
  * transformation (eye in hand) or the base-to-camera transformation (eye to hand). Z denotes the transformation from
  * the flange to the camera (eye in hand) or to the target (eye to hand).
  */
@@ -36,7 +36,7 @@ struct ExtrinsicResult {
 /**
  * @brief Refine the extrinsic calibration of the camera with respect to the robot
  *
- * Input parameters correspond to the AX = BZ problem. Depending on the extrinsic calibration type,
+ * Input parameters correspond to the AX = ZB problem. Depending on the extrinsic calibration type,
  * camera is either mounted in a constant position wrt to the robot base (EyeToHand) or it's mounted
  * on the robot end-effector (EyeInHand). The equation solved stays the same, but the computation of the
  * minimized reprojection error is slightly different.
