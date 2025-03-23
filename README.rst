@@ -20,7 +20,7 @@ Main traits and features
   - Automatic choice of base points for the release object method
 
 Intrinsic calibration roughly corresponds to the `calibrateCameraRO` function from OpenCV.
-Still the `ceres-solver <http://ceres-solver.org/>` used for the optimization provides
+Still the `ceres-solver <http://ceres-solver.org/>`_ used for the optimization provides
 more stable and faster convergence.
 
 - Hand-eye calibration:
@@ -40,16 +40,16 @@ Repository structure
 
 Main parts of the repo are:
 
-- `include` / `src` - the core library code, contains the implementation of intrinsic and hand-eye calibration. You can find the detailed description of the classes and functions in the corresponding header files in `include` directory.
-- `app` - example application that demonstrates the usage of the library (only intrinsic calibration and checkerboard target supported)
-- `tests` - unit tests for the library
-- `datasets` - datasets for the example application and unit tests
-- `patterns` - images and python script to generate synthetic datasets for unit tests
+- **include** / **src** - the core library code, contains the implementation of intrinsic and hand-eye calibration. You can find the detailed description of the classes and functions in the corresponding header files in **include** directory.
+- **app** - example application that demonstrates the usage of the library (only intrinsic calibration and checkerboard target supported)
+- **tests** - unit tests for the library
+- **datasets** - datasets for the example application and unit tests
+- **patterns** - images and python script to generate synthetic datasets for unit tests
 
 How to build
 ------------
 
-The project uses `CMake <https://cmake.org/>`_ as a build system. All dependencies except for OpenCV are downloaded and built automatically
+The project uses CMake as a build system. All dependencies except for OpenCV are downloaded and built automatically
 via `CPM Cmake <https://github.com/cpm-cmake/CPM.cmake>`_.
 
 The project is built with a sequence of commands standard for CMake projects:
@@ -66,7 +66,7 @@ How to use
 Library
 ~~~~~~~
 
-Right now, there is no integration with any package manager. Simply copy the `include` and `src` directories to your project.
+Right now, there is no integration with any package manager. Simply copy the **include** and **src** directories to your project.
 It is responsibility of the user to take care of the dependencies.
 
 Unit tests
