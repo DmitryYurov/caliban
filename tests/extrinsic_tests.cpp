@@ -91,9 +91,9 @@ TEST(Extrinsic, real) {
         intrinsics.rotations, intrinsics.translations, intrinsics.camera_matrix, intrinsics.dist_coeffs, 1.0,
         caliban::ExtrinsicFlags::OptimizeScale);
 
-    EXPECT_NEAR(extrinsics.rms_repro, 1.4, 1e-2);
-    EXPECT_NEAR(extrinsics.scale, 1.008, 1e-3);
-    EXPECT_NEAR(extrinsics.Z_tvec[0], 7.85, 1e-2);
-    EXPECT_NEAR(extrinsics.Z_tvec[1], 4.62, 1e-2);
-    EXPECT_NEAR(extrinsics.Z_tvec[2], 15.7, 1e-2);
+    EXPECT_NEAR(extrinsics.rms_repro, 1.45, 1e-2);
+    EXPECT_NEAR(extrinsics.scale, 1.009, 1e-3);
+    EXPECT_NEAR(extrinsics.Z_tvec[0], 7.54, 1e-2);
+    EXPECT_NEAR(extrinsics.Z_tvec[1], 6.69, 1e-2);
+    EXPECT_NEAR(extrinsics.Z_tvec[2], 10.26, 1e-2);
 }

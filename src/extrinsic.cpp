@@ -68,11 +68,12 @@ struct ReprojectionError {
 
         T r_dist = T(1) + distort[0] * r_2 + distort[1] * r_4 + distort[4] * r_6;
 
-        p[0] = p[0] * r_dist + T(2) * distort[2] * p[0] * p[1] + distort[3] * (r_2 + T(2) * p[0] * p[0]);
-        p[1] = p[1] * r_dist + T(2) * distort[3] * p[0] * p[1] + distort[2] * (r_2 + T(2) * p[1] * p[1]);
+        T pd[n_r2];  // distorted point
+        pd[0] = p[0] * r_dist + T(2) * distort[2] * p[0] * p[1] + distort[3] * (r_2 + T(2) * p[0] * p[0]);
+        pd[1] = p[1] * r_dist + T(2) * distort[3] * p[0] * p[1] + distort[2] * (r_2 + T(2) * p[1] * p[1]);
 
-        T predicted_x = p[0] * cam_mat[0] + cam_mat[1];  // fx, cx
-        T predicted_y = p[1] * cam_mat[2] + cam_mat[3];  // fy, cy
+        T predicted_x = pd[0] * cam_mat[0] + cam_mat[1];  // fx, cx
+        T predicted_y = pd[1] * cam_mat[2] + cam_mat[3];  // fy, cy
 
         residuals[0] = predicted_x - T(m_point_2d[0]);
         residuals[1] = predicted_y - T(m_point_2d[1]);
