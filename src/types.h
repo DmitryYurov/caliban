@@ -12,6 +12,7 @@ using Point3D = std::array<double, n_r3>;
 using Point2D = std::array<double, n_r2>;
 using DistortionCoefficients = std::array<double, n_dist>;
 using QuatSE3 = std::array<double, n_quat_se3>;
+using EulerSE3 = std::array<double, n_se3>;
 
 }  // namespace caliban
 
