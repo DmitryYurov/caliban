@@ -60,15 +60,24 @@ jobs:
         curl -L -o opencv.exe https://github.com/opencv/opencv/releases/download/4.11.0/opencv-4.11.0-windows.exe
         "C:\Program Files\7-Zip\7z.exe" x opencv.exe -oopencv
         echo "OpenCV_DIR=${{ github.workspace }}\\opencv\\build" >> "$GITHUB_ENV"
-
-    - name: Configure CMake
+    
+    - name: Configure CMake (Linux)
+      if: matrix.os == 'ubuntu-latest'
       run: >
-        echo "env.OpenCV_DIR"
         cmake -B ${{ steps.strings.outputs.build-output-dir }}
         -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
         -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
         -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-        ${{ env.OpenCV_DIR != '' && '-DOpenCV_DIR=env.OpenCV_DIR' || '' }}
+        -S ${{ github.workspace }}
+
+    - name: Configure CMake (Win)
+      if: matrix.os == 'windows-latest'
+      run: >
+        cmake -B ${{ steps.strings.outputs.build-output-dir }}
+        -DCMAKE_CXX_COMPILER=${{ matrix.cpp_compiler }}
+        -DCMAKE_C_COMPILER=${{ matrix.c_compiler }}
+        -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+        -DOpenCV_DIR=${{ env.OpenCV_DIR }}
         -S ${{ github.workspace }}
 
     - name: Build
