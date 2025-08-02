@@ -57,9 +57,10 @@ jobs:
       shell: bash
       if: matrix.os == 'windows-latest'
       run: |
-        curl -L -o opencv.zip https://github.com/opencv/opencv/releases/download/4.11.0/opencv-4.11.0-windows.exe
+        curl -L -o opencv.exe https://github.com/opencv/opencv/releases/download/4.11.0/opencv-4.11.0-windows.exe
         mkdir opencv
-        tar -xf opencv.zip -C opencv --strip-components=1
+        chmod +x ./opencv.exe
+        ./opencv.exe
         echo "OpenCV_DIR=${{ github.workspace }}\\opencv\\build" >> "$GITHUB_ENV"
 
     - name: Configure CMake
