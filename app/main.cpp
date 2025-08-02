@@ -83,9 +83,9 @@ int main(int argc, char* argv[]) {
 
     // step 1: loading the image list and taking n_images random images
     std::vector<cv::Mat> images;
+    std::vector<std::filesystem::path> image_list;
     {
         const auto image_dir = program.get<std::filesystem::path>("--path");
-        std::vector<std::filesystem::path> image_list;
         for (const auto& entry : std::filesystem::directory_iterator(image_dir)) {
             if (entry.path().extension() == ".png") {
                 image_list.push_back(entry.path());
@@ -134,7 +134,7 @@ int main(int argc, char* argv[]) {
         for (size_t i = 0; i < images.size(); ++i) {
             std::vector<cv::Point2f> corners_per_image;
             if (!cv::findChessboardCornersSB(images[i], pattern_size, corners_per_image, detection_flags)) {
-                std::cerr << "Chessboard pattern for image " << i << " not found" << std::endl;
+                std::cerr << "Chessboard pattern for image " << image_list[i].string() << " not found" << std::endl;
                 images_to_remove.insert(i);
                 continue;
             }
