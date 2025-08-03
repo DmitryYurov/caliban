@@ -1,3 +1,5 @@
+[![CMake on multiple platforms](https://github.com/DmitryYurov/caliban/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/DmitryYurov/caliban/actions/workflows/cmake-multi-platform.yml)
+
 Caliban
 =======
 
