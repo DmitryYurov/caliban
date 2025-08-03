@@ -81,7 +81,7 @@ or
 
 .. code-block:: bash
 
-    cd <repo root>/build/debug/tests
+    cd <build root directory>/tests
     ./intrinsic_tests
     ./extrinsic_tests
 
@@ -90,7 +90,7 @@ Example application
 
 .. code-block:: bash
 
-    cd <repo root>/build/debug/app
+    cd <build root directory>/app
     ./calib_app --help
 
 This command will call built-in help for the application.
