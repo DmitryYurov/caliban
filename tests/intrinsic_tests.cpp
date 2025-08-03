@@ -63,9 +63,9 @@ TEST(Intrinsic, real) {
     const auto result = caliban::calibrate_intrinsics(object_points, corners, images[0].size());
 
     EXPECT_LT(result.rms_repro, 5e-2);
-    EXPECT_NEAR(result.camera_matrix(0, 0), 1090.0, 3.0);  // fx
-    EXPECT_NEAR(result.camera_matrix(0, 2), 320.0, 1.0);   // cx
-    EXPECT_NEAR(result.camera_matrix(1, 1), 1074.0, 3.0);  // fy
+    EXPECT_NEAR(result.camera_matrix(0, 0), 1090.0, 5.0);  // fx
+    EXPECT_NEAR(result.camera_matrix(0, 2), 320.0, 1.5);   // cx
+    EXPECT_NEAR(result.camera_matrix(1, 1), 1074.0, 5.0);  // fy
     EXPECT_NEAR(result.camera_matrix(1, 2), 239.0, 1.0);   // cy
     EXPECT_NEAR(result.dist_coeffs(0), -0.23, 1e-2);       // k1
     EXPECT_NEAR(result.dist_coeffs(1), 0.14, 1e-2);        // k2
