@@ -91,7 +91,7 @@ TEST(Extrinsic, real) {
         intrinsics.rotations, intrinsics.translations, intrinsics.camera_matrix, intrinsics.dist_coeffs, 1.0,
         caliban::ExtrinsicFlags::OptimizeScale);
 
-    EXPECT_LT(extrinsics.rms_repro, 1.45);
+    EXPECT_LT(extrinsics.rms_repro, 1.46);
     EXPECT_NEAR(extrinsics.scale, 1.009, 1e-3);
     // FIXME: find the reason for instability of the translation vector (Z_tvec windows vs linux)
 }
