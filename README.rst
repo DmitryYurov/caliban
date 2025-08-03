@@ -74,8 +74,8 @@ Unit tests
 
 .. code-block:: bash
 
-    cd <repo root>/build/debug/tests
-    ctest
+    cd <build root directory>
+    ctest --output-on-failure
 
 or 
 
