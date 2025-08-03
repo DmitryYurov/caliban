@@ -1,4 +1,6 @@
-[![CMake on multiple platforms](https://github.com/DmitryYurov/caliban/actions/workflows/cmake-multi-platform.yml/badge.svg)](https://github.com/DmitryYurov/caliban/actions/workflows/cmake-multi-platform.yml)
+.. image:: https://github.com/DmitryYurov/caliban/actions/workflows/cmake-multi-platform.yml/badge.svg
+   :target: https://github.com/DmitryYurov/caliban/actions/workflows/cmake-multi-platform.yml
+   :alt: Build and Test on win / linux
 
 Caliban
 =======
