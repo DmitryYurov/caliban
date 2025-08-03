@@ -11,13 +11,13 @@ include(cmake/get_cpm.cmake)
 
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)  # disable testing for third-party libraries
 CPMAddPackage(
         GITLAB_REPOSITORY libeigen/eigen
         GIT_TAG 3.4.0
-        OPTIONS "EIGEN_BUILD_DOC OFF"
-        "EIGEN_BUILD_PKGCONFIG OFF"
-        "EIGEN_BUILD_DOC OFF"
-        "EIGEN_BUILD_TESTING OFF"
+        OPTIONS "eigen_BUILD_DOC OFF"
+        "eigen_BUILD_PKGCONFIG OFF"
+        "eigen_BUILD_DOC OFF"
 )
 
 CPMAddPackage(
@@ -25,7 +25,6 @@ CPMAddPackage(
         GIT_TAG 2.2.0
         OPTIONS "MINIGLOG ON"
         "PROVIDE_UNINSTALL_TARGET OFF"
-        "BUILD_TESTING OFF"
 )
 
 CPMAddPackage(
@@ -44,4 +43,6 @@ find_package(OpenCV REQUIRED)
 add_subdirectory(src)
 add_subdirectory(app)
 
+set(BUILD_TESTING ON CACHE BOOL "" FORCE) # enable testing for the main project
+enable_testing()
 add_subdirectory(tests)

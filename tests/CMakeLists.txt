@@ -9,7 +9,6 @@ add_executable(extrinsic_tests extrinsic_tests.cpp)
 target_link_libraries(extrinsic_tests PRIVATE ${OpenCV_LIBS} calib GTest::gtest_main)
 target_include_directories(extrinsic_tests PRIVATE ../include ${OpenCV_INCLUDE_DIRS})
 
-enable_testing()
-
 include(GoogleTest)
 gtest_discover_tests(intrinsic_tests)
+gtest_discover_tests(extrinsic_tests)
