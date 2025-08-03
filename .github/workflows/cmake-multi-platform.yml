@@ -59,8 +59,7 @@ jobs:
       run: |
         curl -L -o opencv.exe https://github.com/opencv/opencv/releases/download/4.11.0/opencv-4.11.0-windows.exe
         "C:\Program Files\7-Zip\7z.exe" x opencv.exe -oopencv
-        echo "OpenCV directory = ${{ github.workspace }}\\opencv\\build"
-        echo "OpenCV_DIR=${{ github.workspace }}\\opencv\\build" >> "$GITHUB_ENV"
+        echo "OpenCV_DIR=${{ github.workspace }}\\opencv\\opencv\\build" >> "$GITHUB_ENV"
     
     - name: Configure CMake (Linux)
       if: matrix.os == 'ubuntu-latest'
@@ -89,4 +88,4 @@ jobs:
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
       # Execute tests defined by the CMake configuration. Note that --build-config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ctest --build-config ${{ matrix.build_type }}
+      run: ctest --build-config ${{ matrix.build_type }} --output-on-failure
